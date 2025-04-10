@@ -1,0 +1,14 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Activate venv",
+            "type": "shell",
+            "command": "source ${workspaceFolder}/.venv/bin/activate",
+            "presentation": {
+                "reveal": "never",
+                "panel": "shared"
+            }
+        }
+    ]
+} 

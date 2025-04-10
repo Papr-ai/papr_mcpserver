@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "FastMCP Dev Server",
+            "type": "python",
+            "request": "launch",
+            "module": "fastmcp.__main__",
+            "args": ["dev", "${workspaceFolder}/paprmcp.py"],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.venv",
+            "preLaunchTask": "Activate venv",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/..:${env:PYTHONPATH}"
+            }
+        }
+    ]
+} 
