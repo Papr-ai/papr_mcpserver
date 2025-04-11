@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: FastMCP Server",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/.venv/bin/fastmcp",
+            "args": [
+                "dev",
+                "paprmcp.py"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "python": "${workspaceFolder}/.venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "VIRTUAL_ENV": "${workspaceFolder}/.venv"
+            }
+        }
+    ]
+} 
