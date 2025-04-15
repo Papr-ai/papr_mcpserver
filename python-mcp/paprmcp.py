@@ -60,7 +60,7 @@ def debug_tool(func: Callable) -> Callable:
     return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
 
 # Create an MCP server
-mcp = FastMCP("Demo 🚀")
+mcp = FastMCP("Papr MCP Server🚀")
 
 
 @mcp.tool()
