@@ -17,6 +17,43 @@
                 "PYTHONPATH": "${workspaceFolder}",
                 "VIRTUAL_ENV": "${workspaceFolder}/.venv"
             }
+        },
+        {
+            "name": "Python: FastMCP with Debugger",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/.venv/bin/python",
+            "args": [
+                "-m",
+                "debugpy",
+                "--listen",
+                "5678",
+                "${workspaceFolder}/.venv/bin/fastmcp",
+                "dev",
+                "paprmcp.py"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "python": "${workspaceFolder}/.venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "VIRTUAL_ENV": "${workspaceFolder}/.venv"
+            }
+        },
+        {
+            "name": "Python: Attach to FastMCP",
+            "type": "python",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "justMyCode": false,
+            "python": "${workspaceFolder}/.venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "VIRTUAL_ENV": "${workspaceFolder}/.venv"
+            }
         }
     ]
 } 

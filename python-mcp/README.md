@@ -9,6 +9,7 @@ A FastMCP server implementation for interacting with the Papr Memory API. This p
 - Async API support using httpx
 - Environment-based configuration
 - Type hints and Pydantic models for data validation
+- VS Code debugging support
 
 ## Installation
 
@@ -34,10 +35,31 @@ PAPR_API_KEY=your_api_key_here
 
 ## Usage
 
+### Running the Server
+
 Run the FastMCP server:
 ```bash
 fastmcp dev paprmcp.py
 ```
+
+### Debugging with VS Code
+
+1. Install debugpy:
+```bash
+uv pip install debugpy
+```
+
+2. Start the server in debug mode:
+```bash
+python -m debugpy --wait-for-client --listen 5678 .venv/bin/fastmcp dev paprmcp.py
+```
+
+3. In VS Code:
+   - Go to Run and Debug view (Ctrl+Shift+D or Cmd+Shift+D)
+   - Select "Python: Attach to FastMCP"
+   - Click the green play button or press F5
+   - Set breakpoints in your code by clicking in the left margin
+   - The debugger will stop at breakpoints when the code is executed
 
 The server provides the following tools:
 - `add_memory`: Add a new memory to the Papr Memory service
@@ -50,6 +72,11 @@ This project uses:
 - httpx for async HTTP requests
 - Pydantic for data validation
 - python-dotenv for environment management
+
+### Stopping the Server
+```bash
+pkill -f fastmcp
+```
 
 ## License
 
