@@ -63,8 +63,8 @@ def debug_tool(func: Callable) -> Callable:
 mcp = FastMCP("Demo 🚀")
 
 
-@debug_tool
 @mcp.tool()
+@debug_tool
 async def get_memory(
     query: str,
     project_id: Optional[str] = None,
@@ -155,8 +155,8 @@ async def get_memory(
         logger.error(f"Error getting memories: {str(e)}")
         raise
 
-@debug_tool
 @mcp.tool()
+@debug_tool
 async def add_memory(
     content: str,
     type: str = "text",
@@ -228,8 +228,8 @@ async def add_memory(
         logger.error(f"Error adding memory: {str(e)}")
         raise
 
-@debug_tool
 @mcp.tool()
+@debug_tool
 async def add_document(
     content: str,
     type: str = "document",
@@ -300,8 +300,8 @@ async def add_document(
         logger.error(f"Error adding document: {str(e)}")
         raise
 
-@debug_tool
 @mcp.tool()
+@debug_tool
 async def add_memory_batch(
     memories: List[Dict[str, Any]],
     batch_size: int = 5,
@@ -357,8 +357,8 @@ async def add_memory_batch(
         logger.error(f"Error adding memory batch: {str(e)}")
         raise
 
-@debug_tool
 @mcp.tool()
+@debug_tool
 async def add_memory_batch_with_details(
     memories: List[Dict[str, Any]],
     tenant_subtenant: str,
@@ -421,14 +421,14 @@ async def add_memory_batch_with_details(
         raise
 
 # Add a dynamic greeting resource
-@debug_tool
 @mcp.resource("greeting://{Papr}")
+@debug_tool
 def get_greeting(Papr: str) -> str:
     """Get a personalized greeting"""
     return f"Hello, {Papr}!"
 
-@debug_tool
 @mcp.tool()
+@debug_tool
 async def delete_memory(
     memory_id: str,
     skip_parse: bool = False
@@ -487,8 +487,8 @@ async def delete_memory(
         logger.error(f"Error deleting memory: {str(e)}")
         raise
 
-@debug_tool
 @mcp.tool()
+@debug_tool
 async def update_memory(
     memory_id: str,
     content: Optional[str] = None,
@@ -555,8 +555,8 @@ async def update_memory(
         logger.error(f"Error updating memory: {str(e)}")
         raise
 
-@debug_tool
 @mcp.tool()
+@debug_tool
 async def get_document_status(
     memory_id: str
 ) -> Dict:
