@@ -6,19 +6,22 @@ import os
 from dotenv import load_dotenv
 import json
 import functools
-from models.memory_models import (
+from models.model_validators import (
     ParseStoredMemory,
+    GetMemoryResponse,
+    AddMemoryResponse,
+    BatchMemoryResponse,
+    DeleteMemoryResponse,
+    UpdateMemoryResponse
+)
+from models.memory_models import (
     NeoNode,
     RelatedMemoryResult,
-    GetMemoryResponse,
     MemoryItem
 )
 from models.parse_server import (
-    AddMemoryResponse,
     ParseUserPointer,
     ParsePointer,
-    DeleteMemoryResponse,
-    UpdateMemoryResponse,
     DeletionStatus,
     SystemUpdateStatus
 )

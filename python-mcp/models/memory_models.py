@@ -10,12 +10,11 @@ from models.structured_outputs import (
     OpportunityProperties, CodeProperties
 )
 from services.logging_config import get_logger
-from models.parse_server import ParseStoredMemory
-from pydantic import validator
+from models.model_validators import ParseStoredMemory
 import logging
 
 # Create a logger instance for this module
-logger = get_logger(__name__)  # Will use 'memory_service.memory.memory_graph' as the logger name
+logger = get_logger(__name__)
 
 class MemoryNodeProperties(BaseModel):
     """Properties specific to Memory nodes"""
@@ -127,8 +126,6 @@ class NeoMemoryNode(MemoryProperties, NeoBaseProperties):
     emoji_tags: Optional[List[str]] = Field(default_factory=list)
     hierarchical_structures: Optional[str] = Field(default="")
 
-    pass
-
 class NeoPersonNode(PersonProperties, NeoBaseProperties):
     """Person node with all Neo4j properties"""
     pass
@@ -176,7 +173,6 @@ class NeoNode(BaseModel):
         NeoCodeNode
     ]
 
-
 class MemorySourceLocation(BaseModel):
     """
     Tracks presence of a memory item in different storage systems.
@@ -192,7 +188,6 @@ class MemoryIDSourceLocation(BaseModel):
 class MemorySourceInfo(BaseModel):
     memory_id_source_location: List[MemoryIDSourceLocation]
 
-    
 class RelatedMemoryResult(BaseModel):
     """Return type for find_related_memory_items_async"""
     memory_items: List[ParseStoredMemory]
@@ -202,19 +197,15 @@ class RelatedMemoryResult(BaseModel):
     memory_source_info: Optional[MemorySourceInfo] = None
 
     def log_summary(self) -> None:
-        """Log a summary of the results"""
+        """Log a summary of the related memory result"""
         logger.info(f"Found {len(self.memory_items)} memory items")
-        logger.info(f"Found {len(self.neo_nodes)} neo nodes")
-        logger.info(f"Found {len(self.memory_source_info.memory_id_source_location)} source locations")
-        if self.neo_nodes:
-            logger.info("Sample of neo nodes (first 3):")
-            for i, node in enumerate(self.neo_nodes[:3]):
-                logger.info(f"Node {i + 1}:")
-                logger.info(f"  Label: {node.label}")
-                logger.info(f"  Properties: {json.dumps(node.properties.model_dump(), indent=2)}")
-        logger.info(f"Neo context: {self.neo_context}")
-        logger.info(f"Neo query: {self.neo_query}")
-
+        logger.info(f"Found {len(self.neo_nodes)} Neo4j nodes")
+        if self.neo_context:
+            logger.info(f"Neo4j context: {self.neo_context}")
+        if self.neo_query:
+            logger.info(f"Neo4j query: {self.neo_query}")
+        if self.memory_source_info:
+            logger.info(f"Memory source info: {self.memory_source_info.model_dump()}")
 
 class GetMemoryResponse(BaseModel):
     data: RelatedMemoryResult

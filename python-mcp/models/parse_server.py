@@ -5,6 +5,14 @@ from enum import Enum
 import json
 from fastapi import HTTPException
 from services.logging_config import get_logger
+from models.model_validators import (
+    ParseStoredMemory,
+    GetMemoryResponse,
+    AddMemoryResponse,
+    BatchMemoryResponse,
+    DeleteMemoryResponse,
+    UpdateMemoryResponse
+)
 
 logger = get_logger(__name__)
 
@@ -188,8 +196,8 @@ class ParseUserPointer(BaseModel):
         alias_generator=None
     )
 
-    @field_validator('profileimage')  # Now properly imported from pydantic
-    @classmethod  # Add this decorator for class methods
+    @field_validator('profileimage')
+    @classmethod
     def validate_profileimage(cls, v):
         if v is None:
             return None
@@ -198,9 +206,8 @@ class ParseUserPointer(BaseModel):
             return v
         # If it's a Parse File object, return the URL
         if isinstance(v, dict):
-            return v.get('url', None)
-        return None
-        
+            return v.get('url')
+
     def model_dump(self, *args, **kwargs):
         """Override model_dump to ensure __type is included"""
         data = super().model_dump(*args, **kwargs)
@@ -208,7 +215,7 @@ class ParseUserPointer(BaseModel):
         if 'type' in data:
             data['__type'] = data.pop('type')
         return data
-    
+
 class ParseStoredMemory(BaseModel):
     objectId: str
     createdAt: Optional[datetime] = None
