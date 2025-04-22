@@ -2,6 +2,30 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: FastMCP",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/paprmcp.py",
+            "args": [],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "Python: FastMCP Dev",
+            "type": "python",
+            "request": "launch",
+            "module": "fastmcp",
+            "args": ["dev", "paprmcp.py"],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
             "name": "Python: FastMCP Server",
             "type": "python",
             "request": "launch",
@@ -54,6 +78,48 @@
                 "PYTHONPATH": "${workspaceFolder}",
                 "VIRTUAL_ENV": "${workspaceFolder}/.venv"
             }
+        },
+        {
+            "name": "Debug setup_mcp.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/setup_mcp.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Debug setup_mcp.py with mock API key",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/setup_mcp.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "MOCK_API_KEY": "test_api_key_123"
+            }
+        },
+        {
+            "name": "Debug setup_mcp.py with existing config",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/setup_mcp.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": ["--use-existing"],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Debug setup_mcp.py and paprmcp.py",
+            "configurations": ["Debug setup_mcp.py", "Debug MCP Server"],
+            "stopAll": true
         }
     ]
 } 

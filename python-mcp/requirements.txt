@@ -15,4 +15,5 @@ ollama>=0.1.6
 sentence-transformers>=2.2.2
 transformers>=4.36.0
 langchain>=0.1.0
-certifi>=2024.2.2 
+certifi>=2024.2.2
+sse-starlette>=1.8.0 

@@ -1,83 +1,118 @@
-# Papr Memory MCP
+# Papr MCP Server
 
-A FastMCP server implementation for interacting with the Papr Memory API. This project provides a simple interface for adding and managing memories using the Papr Memory service.
+A FastAPI-based MCP (Memory Control Protocol) server implementation for integrating with Papr's memory services (https://papr.ai).
 
-## Features
+## Prerequisites
 
-- Add memories with content, metadata, and context
-- FastMCP integration for easy tool usage
-- Async API support using httpx
-- Environment-based configuration
-- Type hints and Pydantic models for data validation
-- VS Code debugging support
+- Python 3.10 or higher
+- `uv` package manager (will be installed automatically by the setup script)
 
-## Installation
+## Quick Start
 
-1. Create and activate a virtual environment:
+1. Clone this repository:
 ```bash
-uv venv
-source .venv/bin/activate  # On Unix/macOS
-# OR
-.venv\Scripts\activate  # On Windows
+git clone <repository-url>
+cd python-mcp
 ```
 
-2. Install dependencies:
+2. Run the setup script:
 ```bash
-uv pip install -r requirements.txt
+python setup_mcp.py
 ```
 
-3. Configure environment:
-- Copy `.env.example` to `.env`
-- Add your Papr API key:
-```
-PAPR_API_KEY=your_api_key_here
-```
+The setup script will:
+- Install `uv` if not already installed
+- Create a virtual environment (you can specify a custom name or use the default '.venv')
+- Install all required dependencies
+- Configure your Papr API key (make sure you obtained one before running the script)
+- Set up MCP configuration for your chosen client (Claude or Cursor)
+- Optionally start the MCP server
 
-## Usage
+## Setup Options
 
-### Running the Server
+You can run the setup script with different options:
 
-Run the FastMCP server:
 ```bash
-fastmcp dev paprmcp.py
+# Basic setup with all prompts
+python setup_mcp.py
+
+# Skip dependency installation
+python setup_mcp.py --skip-deps
+
+# Enable debug logging
+python setup_mcp.py --debug
+
+# Use existing configuration
+python setup_mcp.py --use-existing
 ```
 
-### Debugging with VS Code
+## Manual Server Start
 
-1. Install debugpy:
+If you chose not to start the server during setup, you can start it manually:
+
 ```bash
-uv pip install debugpy
+# Using uv run (recommended)
+uv run python paprmcp.py
+
+# Or if you've activated the virtual environment manually:
+python paprmcp.py
 ```
 
-2. Start the server in debug mode:
-```bash
-python -m debugpy --wait-for-client --listen 5678 .venv/bin/fastmcp dev paprmcp.py
-```
+Note: Using `uv run` is recommended as it ensures the correct virtual environment is used.
 
-3. In VS Code:
-   - Go to Run and Debug view (Ctrl+Shift+D or Cmd+Shift+D)
-   - Select "Python: Attach to FastMCP"
-   - Click the green play button or press F5
-   - Set breakpoints in your code by clicking in the left margin
-   - The debugger will stop at breakpoints when the code is executed
+## Configuration
 
-The server provides the following tools:
-- `add_memory`: Add a new memory to the Papr Memory service
-- `add`: Simple addition tool (demo)
+The setup script creates two main configuration files:
+
+1. `.env` file in the project root:
+   - Contains your Papr API key
+   - Sets the memory server URL (default is memory.papr.ai)
+
+2. MCP configuration file (location depends on your OS and chosen client):
+   - macOS: 
+     - Claude: `~/Library/Application Support/claude/claude_desktop_config.json`
+     - Cursor: `./cursor/mcp.json`
+   - Windows:
+     - Claude: `%APPDATA%/claude/claude_desktop_config.json`
+     - Cursor: `./cursor/mcp.json`
+   - Linux:
+     - Claude: `~/.config/claude/claude_desktop_config.json`
+     - Cursor: `./cursor/mcp.json`
 
 ## Development
 
-This project uses:
-- FastMCP for tool management
-- httpx for async HTTP requests
-- Pydantic for data validation
-- python-dotenv for environment management
+The project uses `pyproject.toml` for dependency management with the following extras:
+- `dev`: Development tools (debugpy, Flask, etc.)
+- `test`: Testing tools (pytest, coverage, etc.)
+- `all`: All of the above
 
-### Stopping the Server
+To install specific extras:
 ```bash
-pkill -f fastmcp
+uv pip install ".[dev]"  # Development dependencies
+uv pip install ".[test]"  # Testing dependencies
+uv pip install ".[all]"  # All dependencies
 ```
 
-## License
+## Troubleshooting
 
-MIT License 
+If you encounter any issues:
+
+1. Check the logs for detailed error messages
+2. Ensure your Papr API key is correctly set in the `.env` file
+3. Verify the virtual environment is activated
+4. Make sure all dependencies are installed correctly
+
+For additional help, please contact support or open an issue in the repository.
+
+## Project Structure
+
+```
+python-mcp/
+├── models/              # Data models and validators
+├── services/           # Business logic and services
+├── tests/             # Test files
+├── paprmcp.py         # Main MCP server file
+├── requirements.txt   # Project dependencies
+└── .env              # Environment configuration
+```
+
