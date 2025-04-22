@@ -179,11 +179,17 @@ def main():
     parser.add_argument('--use-existing', action='store_true', help='Use existing configuration if available')
     parser.add_argument('--debug', action='store_true', help='Enable debug mode')
     parser.add_argument('--skip-deps', action='store_true', help='Skip dependency installation')
+    parser.add_argument('--run-server', action='store_true', help='Skip setup and run server directly')
     args = parser.parse_args()
 
     if args.debug:
         logger.setLevel(logging.DEBUG)
     
+    if args.run_server:
+        print("Starting MCP server...")
+        run_paprmcp()
+        return
+
     print("Welcome to MCP Setup!")
     print("--------------------")
     
@@ -212,7 +218,7 @@ def main():
             print("✓ Dependencies installed")
         
         # Get API key from user or environment
-        api_key = os.getenv("MOCK_API_KEY")  # For testing
+        api_key = os.getenv("PAPR_API_KEY")  #
         if not api_key:
             api_key = input("Please enter your Papr API key: ").strip()
         
@@ -237,7 +243,7 @@ def main():
             print("\nStarting MCP server...")
             run_paprmcp()
         else:
-            print("\nYou can start the server later by running: python paprmcp.py")
+            print("\nYou can start the server later by running: uv run python paprmcp.py")
         
         print("\nSetup complete! 🎉")
     

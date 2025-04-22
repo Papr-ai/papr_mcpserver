@@ -34,16 +34,16 @@ You can run the setup script with different options:
 
 ```bash
 # Basic setup with all prompts
-python setup_mcp.py
+python setup_run_mcp.py
 
 # Skip dependency installation
-python setup_mcp.py --skip-deps
+python setup_run_mcp.py --skip-deps
 
 # Enable debug logging
-python setup_mcp.py --debug
+python setup_run_mcp.py --debug
 
-# Use existing configuration
-python setup_mcp.py --use-existing
+# Skip setup and run server directly
+python setup_run_mcp.py --run-server
 ```
 
 ## Manual Server Start
@@ -51,14 +51,17 @@ python setup_mcp.py --use-existing
 If you chose not to start the server during setup, you can start it manually:
 
 ```bash
-# Using uv run (recommended)
+# Using setup script (recommended)
+python setup_mcp.py --run-server
+
+# Using uv directly
 uv run python paprmcp.py
 
 # Or if you've activated the virtual environment manually:
 python paprmcp.py
 ```
 
-Note: Using `uv run` is recommended as it ensures the correct virtual environment is used.
+Note: Using the setup script with `--run-server` is recommended as it ensures the correct virtual environment is used and proper configuration is loaded.
 
 ## Configuration
 
