@@ -83,7 +83,7 @@
             "name": "Debug setup_mcp.py",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/setup_mcp.py",
+            "program": "${workspaceFolder}/setup_run_mcp.py",
             "console": "integratedTerminal",
             "justMyCode": false,
             "env": {
@@ -94,7 +94,7 @@
             "name": "Debug setup_mcp.py with mock API key",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/setup_mcp.py",
+            "program": "${workspaceFolder}/setup_run_mcp.py",
             "console": "integratedTerminal",
             "justMyCode": false,
             "env": {
@@ -106,7 +106,7 @@
             "name": "Debug setup_mcp.py with existing config",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/setup_mcp.py",
+            "program": "${workspaceFolder}/setup_run_mcp.py",
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": ["--use-existing"],

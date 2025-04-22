@@ -51,25 +51,28 @@ def get_default_mcp_path():
     # Ask for client name
     client_name = input("Enter client name ('claude' or 'cursor', press Enter for default 'claude'): ").strip().lower()
     if client_name not in ['claude', 'cursor']:
-        client_name = 'claude'
+        client_name = 'none'
     logger.debug(f"Client name: {client_name}")
 
     # Set path based on client
     if client_name.lower() == "cursor":
-        path = Path("./cursor")
-    else:  # Default to Claude path structure
-        if system == "darwin":  # macOS
+        path = Path("~/.cursor").expanduser()
+    elif client_name.lower() == "claude":
+         if system == "darwin":  # macOS
             path = home / "Library" / "Application Support" / client_name
-        elif system == "windows": 
+         elif system == "windows": 
             path = home / "AppData" / "Roaming" / client_name
-        else:  # Linux and others
+         else:  # Linux and others
             path = home / ".config" / client_name
-    
-    
+    else:  # Default to Claude path structure
+        path = None
+        config_file = None
+
     logger.debug(f"MCP Config Path: {path}")
-    path.mkdir(parents=True, exist_ok=True)
-    config_file = path / ("mcp.json" if client_name.lower() == "cursor" else "claude_desktop_config.json")
-    logger.debug(f"Config file path: {config_file}")
+    if path:
+        path.mkdir(parents=True, exist_ok=True)
+        config_file = path / ("mcp.json" if client_name.lower() == "cursor" else "claude_desktop_config.json")
+        logger.debug(f"Config file path: {config_file}")
     return path, config_file
 
 def update_env_file(api_key):
@@ -110,7 +113,8 @@ def update_mcp_config():
     try:
         # Read existing config if it exists
         existing_config = {}
-        if config_file.exists():
+        
+        if config_file and config_file.exists():
             with open(config_file, 'r') as f:
                 existing_config = json.load(f)
         
@@ -142,19 +146,24 @@ def update_mcp_config():
                 }
             }
         }
-        
-        # Update or add mcpServers section
-        if "mcpServers" in existing_config:
-            existing_config["mcpServers"].update(mcp_server_config)
+        if path:
+            # Update or add mcpServers section
+            if "mcpServers" in existing_config:
+                existing_config["mcpServers"].update(mcp_server_config)
+            else:
+                existing_config["mcpServers"] = mcp_server_config
+            
+            # Write updated config
+            with open(config_file, 'w') as f:
+                json.dump(existing_config, f, indent=2)
+            logger.debug("Successfully wrote config file")
+            
+            print(f"Updated MCP config at: {config_file}")
         else:
-            existing_config["mcpServers"] = mcp_server_config
-        
-        # Write updated config
-        with open(config_file, 'w') as f:
-            json.dump(existing_config, f, indent=2)
-        logger.debug("Successfully wrote config file")
-        
-        print(f"Updated MCP config at: {config_file}")
+            # dump mcp_server_config to the console, 
+            # print to use instruction to copy paste to the client mcp config file            
+            print("Please copy paste the following to the client mcp config file:")
+            print(json.dumps(mcp_server_config, indent=2))
     except Exception as e:
         logger.error(f"Error updating MCP config: {e}")
         raise
@@ -218,8 +227,10 @@ def main():
             print("✓ Dependencies installed")
         
         # Get API key from user or environment
-        api_key = os.getenv("PAPR_API_KEY")  #
-        if not api_key:
+        api_key = os.getenv("PAPR_API_KEY")  
+        if api_key:
+            print("Using API key from .env file")
+        else:
             api_key = input("Please enter your Papr API key: ").strip()
         
         if not api_key:

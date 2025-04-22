@@ -37,12 +37,20 @@ class ParseStoredMemory(BaseModel):
     ACL: Dict[str, Dict[str, bool]] = Field(default_factory=dict)
     sourceType: str = ""
     title: Optional[str] = None
-    location: str = "online"
+    location: str = ""  # Changed to empty string default
     emojiTags: List[str] = Field(default_factory=list)
     hierarchicalStructures: str = ""
     file_url: Optional[str] = None
     filename: Optional[str] = None
     page: Optional[int] = None
+
+    @field_validator('location', mode='before')
+    @classmethod
+    def validate_location(cls, v: Any) -> str:
+        """Ensure location has a valid string value"""
+        if v is None or not str(v).strip():
+            return ""
+        return str(v)
 
     @field_validator('metadata', mode='before')
     @classmethod

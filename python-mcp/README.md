@@ -34,16 +34,16 @@ You can run the setup script with different options:
 
 ```bash
 # Basic setup with all prompts
-python setup_run_mcp.py
+python3 setup_run_mcp.py
 
 # Skip dependency installation
-python setup_run_mcp.py --skip-deps
+python3 setup_run_mcp.py --skip-deps
 
 # Enable debug logging
-python setup_run_mcp.py --debug
+python3 setup_run_mcp.py --debug
 
 # Skip setup and run server directly
-python setup_run_mcp.py --run-server
+python3 setup_run_mcp.py --run-server
 ```
 
 ## Manual Server Start
@@ -52,7 +52,7 @@ If you chose not to start the server during setup, you can start it manually:
 
 ```bash
 # Using setup script (recommended)
-python setup_mcp.py --run-server
+python3 setup_mcp.py --run-server
 
 # Using uv directly
 uv run python paprmcp.py
@@ -109,16 +109,16 @@ For additional help, please contact support or open an issue in the repository.
 
 ```
 python-mcp/
-├── models/              # Data models and validators
-├── services/           # Business logic and services
+├── models/            # Data models and validators
+├── services/          # Middleware services
 ├── tests/             # Test files
 ├── paprmcp.py         # Main MCP server file
 ├── requirements.txt   # Project dependencies
-└── .env              # Environment configuration
+└── .env               # Environment configuration
 ```
 
 Todo (stdio lcoal):
-- clean services and models directory (p0)
+
 - use v1/search  for get_memory
 - update mcp to read from fastapi  ()
 - Tested Claude, test cursor and app in the setup the piece of code to append to any client 
