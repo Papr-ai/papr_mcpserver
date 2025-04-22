@@ -34,40 +34,11 @@ load_dotenv()
 logger = get_logger(__name__)
 logger.info("Logging system initialized")
 
-def debug_tool(func: Callable) -> Callable:
-    """Wrapper to enable breakpoints in mcp.tool functions"""
-    @functools.wraps(func)
-    async def async_wrapper(*args, **kwargs):
-        # Set breakpoint here to debug async functions
-        logger.debug(f"Debug wrapper called for {func.__name__} with args: {args}, kwargs: {kwargs}")
-        try:
-            result = await func(*args, **kwargs)
-            logger.debug(f"Debug wrapper result for {func.__name__}: {result}")
-            return result
-        except Exception as e:
-            logger.error(f"Error in {func.__name__}: {str(e)}")
-            raise
-
-    @functools.wraps(func)
-    def sync_wrapper(*args, **kwargs):
-        # Set breakpoint here to debug sync functions
-        logger.debug(f"Debug wrapper called for {func.__name__} with args: {args}, kwargs: {kwargs}")
-        try:
-            result = func(*args, **kwargs)
-            logger.debug(f"Debug wrapper result for {func.__name__}: {result}")
-            return result
-        except Exception as e:
-            logger.error(f"Error in {func.__name__}: {str(e)}")
-            raise
-
-    return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
-
 # Create an MCP server
 mcp = FastMCP("Papr MCP Server")
 
 
 @mcp.tool()
-@debug_tool
 async def get_memory(
     query: str,
     project_id: Optional[str] = None,
@@ -159,7 +130,6 @@ async def get_memory(
         raise
 
 @mcp.tool()
-@debug_tool
 async def add_memory(
     content: str,
     type: str = "text",
@@ -232,7 +202,6 @@ async def add_memory(
         raise
 
 @mcp.tool()
-@debug_tool
 async def add_document(
     content: str,
     type: str = "document",
@@ -304,7 +273,6 @@ async def add_document(
         raise
 
 @mcp.tool()
-@debug_tool
 async def add_memory_batch(
     memories: List[Dict[str, Any]],
     batch_size: int = 5,
@@ -361,7 +329,6 @@ async def add_memory_batch(
         raise
 
 @mcp.tool()
-@debug_tool
 async def add_memory_batch_with_details(
     memories: List[Dict[str, Any]],
     tenant_subtenant: str,
@@ -425,13 +392,11 @@ async def add_memory_batch_with_details(
 
 # Add a dynamic greeting resource
 @mcp.resource("greeting://{Papr}")
-@debug_tool
 def get_greeting(Papr: str) -> str:
     """Get a personalized greeting"""
     return f"Hello, {Papr}!"
 
 @mcp.tool()
-@debug_tool
 async def delete_memory(
     memory_id: str,
     skip_parse: bool = False
@@ -491,7 +456,6 @@ async def delete_memory(
         raise
 
 @mcp.tool()
-@debug_tool
 async def update_memory(
     memory_id: str,
     content: Optional[str] = None,
@@ -559,7 +523,6 @@ async def update_memory(
         raise
 
 @mcp.tool()
-@debug_tool
 async def get_document_status(
     memory_id: str
 ) -> Dict:

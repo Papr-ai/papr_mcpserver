@@ -57,9 +57,7 @@ python setup_mcp.py --run-server
 # Using uv directly
 uv run python paprmcp.py
 
-# Or if you've activated the virtual environment manually:
-python paprmcp.py
-```
+
 
 Note: Using the setup script with `--run-server` is recommended as it ensures the correct virtual environment is used and proper configuration is loaded.
 
@@ -118,4 +116,14 @@ python-mcp/
 ├── requirements.txt   # Project dependencies
 └── .env              # Environment configuration
 ```
+
+Todo (stdio lcoal):
+- clean services and models directory (p0)
+- use v1/search  for get_memory
+- update mcp to read from fastapi  ()
+- Tested Claude, test cursor and app in the setup the piece of code to append to any client 
+
+Remote MCP Todo
+-> add support for http route in MCP server (p0)
+-> host in the cloud (p0)
 
