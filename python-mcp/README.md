@@ -55,8 +55,12 @@ If you chose not to start the server during setup, you can start it manually:
 python3 setup_mcp.py --run-server
 
 # Using uv directly
+
+source .venv/bin/activate
 uv run python paprmcp.py
 
+# run and use mcp inspector
+fastmcp dev paprmcp.py
 
 
 Note: Using the setup script with `--run-server` is recommended as it ensures the correct virtual environment is used and proper configuration is loaded.
@@ -121,7 +125,7 @@ Todo (stdio lcoal):
 
 - use v1/search  for get_memory
 - update mcp to read from fastapi  ()
-- Tested Claude, test cursor and app in the setup the piece of code to append to any client 
+
 
 Remote MCP Todo
 -> add support for http route in MCP server (p0)
