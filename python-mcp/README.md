@@ -17,7 +17,7 @@ cd python-mcp
 
 2. Run the setup script:
 ```bash
-python setup_mcp.py
+python3 setup_mcp.py
 ```
 
 The setup script will:
@@ -59,7 +59,7 @@ python3 setup_mcp.py --run-server
 source .venv/bin/activate
 uv run python paprmcp.py
 
-# run and use mcp inspector
+# For debugging run and use mcp inspector as client
 fastmcp dev paprmcp.py
 
 
