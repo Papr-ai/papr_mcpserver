@@ -17,7 +17,7 @@ cd python-mcp
 
 2. Run the setup script:
 ```bash
-python3 setup_mcp.py
+python3 setup_run_mcp.py
 ```
 
 The setup script will:
