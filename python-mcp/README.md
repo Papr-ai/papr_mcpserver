@@ -6,12 +6,13 @@ A FastAPI-based MCP (Memory Control Protocol) server implementation for integrat
 
 - Python 3.10 or higher
 - `uv` package manager (will be installed automatically by the setup script)
+- **Get your API key:** You can find it in the settings section of **[papr.ai](https://papr.ai)**. You'll need to create an account first and quickly go through our web app onboarding.
 
 ## Quick Start
 
-1. Clone this repository:
+1. Clone this repository for Python MCP Papr Server:
 ```bash
-git clone <repository-url>
+git clone https://github.com/Papr-ai/papr_mcpserver
 cd python-mcp
 ```
 
@@ -20,48 +21,66 @@ cd python-mcp
 python3 setup_run_mcp.py
 ```
 
-The setup script will:
-- Install `uv` if not already installed
-- Create a virtual environment (you can specify a custom name or use the default '.venv')
-- Install all required dependencies
-- Configure your Papr API key (make sure you obtained one before running the script)
-- Set up MCP configuration for your chosen client (Claude or Cursor)
-- Optionally start the MCP server
+The setup script will guide you through the following steps:
+
+1. **Dependencies Installation**
+   - Installs `uv` if not already present
+   - Creates a virtual environment (default '.venv')
+   - Installs all required project dependencies
+
+2. **API Key Configuration**
+   - Prompts for your Papr API key
+   - Validates the key format
+   - Stores it securely in `.env` file
+
+3. **MCP Client Selection**
+   - Choose your preferred client:
+     - Claude
+     - Cursor AI
+     - Other
+
+4. **Client Configuration**
+   - For Claude: Automatically configures `claude_desktop_config.json`
+   - For Cursor AI: Automatically configures `./cursor/mcp.json`
+   - For Other clients: Displays the configuration JSON in console (you'll need to manually copy this to your client's configuration)
+
+> **Note:** If you select "Other" as your client, the script will print the MCP configuration JSON to the console. You'll need to manually copy this configuration to your client's appropriate configuration file.
+
+The script will then:
+- Start the MCP server (optional)
+- Provide instructions for manual server start if you choose not to start it immediately
+
+> **Tip:** You can always start the server later using the options described in the "Manual Server Start" section below.
 
 ## Setup Options
 
 You can run the setup script with different options:
 
 ```bash
-# Basic setup with all prompts
+# Full setup with all prompts
 python3 setup_run_mcp.py
 
 # Skip dependency installation
 python3 setup_run_mcp.py --skip-deps
 
-# Enable debug logging
-python3 setup_run_mcp.py --debug
-
-# Skip setup and run server directly
+# Skip setup and run server 
 python3 setup_run_mcp.py --run-server
 ```
 
-## Manual Server Start
+## Start Server Directly
 
 If you chose not to start the server during setup, you can start it manually:
 
 ```bash
-# Using setup script (recommended)
-python3 setup_mcp.py --run-server
 
 # Using uv directly
-
 source .venv/bin/activate
 uv run python paprmcp.py
 
 # For debugging run and use mcp inspector as client
+source .venv/bin/activate
 fastmcp dev paprmcp.py
-
+```
 
 Note: Using the setup script with `--run-server` is recommended as it ensures the correct virtual environment is used and proper configuration is loaded.
 
@@ -121,13 +140,12 @@ python-mcp/
 └── .env               # Environment configuration
 ```
 
-Todo (stdio lcoal):
-
-- use v1/search  for get_memory
-- update mcp to read from fastapi  ()
-
+Todo (stdio local):
+- use v1/search for get_memory
+- update mcp to read from fastapi ()
 
 Remote MCP Todo
 -> add support for http route in MCP server (p0)
 -> host in the cloud (p0)
+
 

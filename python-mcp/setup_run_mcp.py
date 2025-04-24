@@ -229,9 +229,8 @@ def main():
         # Get API key from user or environment
         api_key = os.getenv("PAPR_API_KEY")  
         if api_key:
-            print("Using API key from .env file")
-        else:
-            api_key = input("Please enter your Papr API key: ").strip()
+            print("API key stored in .env file")
+        api_key = input("Please enter your Papr API key: ").strip()
         
         if not api_key:
             logger.error("No API key provided")
