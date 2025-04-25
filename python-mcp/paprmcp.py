@@ -15,6 +15,7 @@ from mcp.types import TextContent, ImageContent, EmbeddedResource
 from typing import Any, List
 import json
 import logging
+from pathlib import Path
 
 # Load environment variables
 load_dotenv()
@@ -39,11 +40,17 @@ http_client = httpx.AsyncClient(
     headers=headers
 )
 
-# Load OpenAPI spec
-with open("openapi.json", "r") as f:
-    openapi_spec = json.load(f)
+# Get the directory containing the script
+SCRIPT_DIR = Path(__file__).parent.absolute()
 
-
+# Load OpenAPI spec using absolute path
+openapi_path = SCRIPT_DIR / "openapi.json"
+try:
+    with open(openapi_path, "r") as f:
+        openapi_spec = json.load(f)
+except FileNotFoundError:
+    logger.error(f"OpenAPI spec not found at {openapi_path}")
+    raise
 
 logger = logging.getLogger(__name__)
 
@@ -102,17 +109,7 @@ class CustomFastMCP(FastMCPOpenAPI):
         # Replace the tool manager's call_tool method
         self._tool_manager.call_tool = custom_call_tool
 
-    async def _mcp_call_tool(self, name: str, arguments: dict[str, Any]) -> Any:
-        """Override the call_tool method to properly handle API responses."""
-        logger.info(f"CustomFastMCP._mcp_call_tool called with name={name}, arguments={arguments}")
-        try:
-            context = self.get_context()
-            result = await self._tool_manager.call_tool(name, arguments, context=context)
-            logger.info(f"CustomFastMCP._mcp_call_tool result: {result}")
-            return result
-        except Exception as e:
-            logger.error(f"Error in _mcp_call_tool: {str(e)}")
-            raise
+  
                 
 def init_mcp():
     """Initialize MCP server with OpenAPI spec and HTTP client"""
@@ -131,31 +128,11 @@ def init_mcp():
         logger.error(f"Error initializing MCP: {str(e)}")
         raise
 
+# Initialize Papr MCP
 mcp = init_mcp()
 
 if __name__ == "__main__":
     try:
-        # Configure logging
-        logging.getLogger().handlers = []
-        logging.basicConfig(
-            level=logging.DEBUG,
-            format='%(asctime)s - PID:%(process)d - %(name)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.StreamHandler(),
-                logging.FileHandler('logs/mcp_server.log')
-            ]
-        )        
-        # Test a tool call
-        async def test_tool_call():
-            try:
-                result = await mcp._mcp_call_tool("list_memories", {})
-                logger.info(f"Test tool call result: {result}")
-            except Exception as e:
-                logger.error(f"Test tool call failed: {str(e)}")
-        
-        # Run the test
-        asyncio.run(test_tool_call())
-        
         # Start the server
         logger.info("Starting MCP server process...")
         mcp.run()
