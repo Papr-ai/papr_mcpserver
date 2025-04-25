@@ -83,7 +83,7 @@ fastmcp dev paprmcp.py
 
 Note: Using the setup script with `--run-server` is recommended as it ensures the correct virtual environment is used and proper configuration is loaded.
 
-## Configuration
+## Created Configuration
 
 The setup script creates two main configuration files:
 
@@ -147,14 +147,4 @@ If you encounter any issues:
 
 For additional help, please contact support or open an issue in the repository.
 
-## Project Structure
 
-```
-python-mcp/
-├── models/            # Data models and validators
-├── services/          # Middleware services
-├── tests/             # Test files
-├── paprmcp.py         # Main MCP server file
-├── requirements.txt   # Project dependencies
-└── .env               # Environment configuration
-```
