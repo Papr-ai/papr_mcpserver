@@ -5,7 +5,6 @@ A FastAPI-based MCP (Memory Control Protocol) server implementation for integrat
 ## Prerequisites
 
 - Python 3.10 or higher
-- `uv` package manager (will be installed automatically by the setup script)
 - **Get your API key:** You can find it in the settings section of **[papr.ai](https://papr.ai)**. You'll need to create an account first and quickly go through our web app onboarding.
 
 ## Quick Start
@@ -48,7 +47,7 @@ The setup script will guide you through the following steps:
 
 The script will then:
 - Start the MCP server (optional)
-- Provide instructions for manual server start if you choose not to start it immediately
+
 
 > **Tip:** You can always start the server later using the options described in the "Manual Server Start" section below.
 
@@ -116,6 +115,26 @@ uv pip install ".[dev]"  # Development dependencies
 uv pip install ".[test]"  # Testing dependencies
 uv pip install ".[all]"  # All dependencies
 ```
+### Debugging with VS Code
+
+1. Install debugpy:
+```bash
+uv pip install ".[dev]" 
+```
+
+2. Start the server as well as mcp inspector in debug mode:
+```bash
+source .venv/bin/activate
+python -m debugpy --wait-for-client --listen 5678 .venv/bin/fastmcp dev paprmcp.py
+```
+
+3. In VS Code:
+   - Go to Run and Debug view (Ctrl+Shift+D or Cmd+Shift+D)
+   - Select "Python: Attach to FastMCP"
+   - Click the green play button or press F5
+   - Set breakpoints in your code by clicking in the left margin
+   - The debugger will stop at breakpoints when the code is executed
+
 
 ## Troubleshooting
 
@@ -139,10 +158,6 @@ python-mcp/
 ├── requirements.txt   # Project dependencies
 └── .env               # Environment configuration
 ```
-
-Todo (stdio local):
-- use v1/search for get_memory
-- update mcp to read from fastapi ()
 
 Remote MCP Todo
 -> add support for http route in MCP server (p0)
