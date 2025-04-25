@@ -158,9 +158,3 @@ python-mcp/
 ├── requirements.txt   # Project dependencies
 └── .env               # Environment configuration
 ```
-
-Remote MCP Todo
--> add support for http route in MCP server (p0)
--> host in the cloud (p0)
-
-
