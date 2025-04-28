@@ -1153,6 +1153,771 @@
                 }
             }
         },
+        "/v1/memory": {
+            "post": {
+                "tags": [
+                    "v1"
+                ],
+                "summary": "Add Memory V1",
+                "description": "Add a new memory item to the system with size validation and background processing.\n    \n    **Authentication Required**:\n    One of the following authentication methods must be used:\n    - Bearer token in `Authorization` header\n    - API Key in `X-API-Key` header\n    - Session token in `X-Session-Token` header\n    \n    **Required Headers**:\n    - Content-Type: application/json\n    - X-Client-Type: (e.g., 'papr_plugin', 'browser_extension')\n    \n    The API validates content size against MAX_CONTENT_LENGTH environment variable (defaults to 15000 bytes).",
+                "operationId": "add_memory_v1_v1_memory_post",
+                "security": [
+                    {
+                        "APIKeyHeader": []
+                    },
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "skip_background_processing",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "description": "If True, skips adding background tasks for processing",
+                            "default": false,
+                            "title": "Skip Background Processing"
+                        },
+                        "description": "If True, skips adding background tasks for processing"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AddMemoryRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Memory successfully added",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AddMemoryResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ErrorDetail"
+                                        }
+                                    ],
+                                    "title": "Response Add Memory V1 V1 Memory Post",
+                                    "$ref": "#/components/schemas/AddMemoryResponse"
+                                }
+                            }
+                        }
+                    },
+                    "207": {
+                        "description": "Memory added with degraded functionality",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AddMemoryResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Subscription limit reached",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "413": {
+                        "description": "Content too large",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/memory/{memory_id}": {
+            "put": {
+                "tags": [
+                    "v1"
+                ],
+                "summary": "Update Memory V1",
+                "description": "Update an existing memory item by ID.\n    \n    **Authentication Required**:\n    One of the following authentication methods must be used:\n    - Bearer token in `Authorization` header\n    - API Key in `X-API-Key` header\n    - Session token in `X-Session-Token` header\n    \n    **Required Headers**:\n    - Content-Type: application/json\n    - X-Client-Type: (e.g., 'papr_plugin', 'browser_extension')\n    \n    The API validates content size against MAX_CONTENT_LENGTH environment variable (defaults to 15000 bytes).",
+                "operationId": "update_memory_v1_v1_memory__memory_id__put",
+                "security": [
+                    {
+                        "APIKeyHeader": []
+                    },
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "memory_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Memory Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateMemoryRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Memory successfully updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/UpdateMemoryResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ErrorDetail"
+                                        }
+                                    ],
+                                    "title": "Response Update Memory V1 V1 Memory  Memory Id  Put",
+                                    "$ref": "#/components/schemas/UpdateMemoryResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Memory not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "413": {
+                        "description": "Content too large",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "v1"
+                ],
+                "summary": "Delete Memory V1",
+                "description": "Delete a memory item by ID.\n    \n    **Authentication Required**:\n    One of the following authentication methods must be used:\n    - Bearer token in `Authorization` header\n    - API Key in `X-API-Key` header\n    - Session token in `X-Session-Token` header\n    \n    **Required Headers**:\n    - X-Client-Type: (e.g., 'papr_plugin', 'browser_extension')",
+                "operationId": "delete_memory_v1_v1_memory__memory_id__delete",
+                "security": [
+                    {
+                        "APIKeyHeader": []
+                    },
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "memory_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Memory Id"
+                        }
+                    },
+                    {
+                        "name": "skip_parse",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "description": "Skip Parse Server deletion",
+                            "default": false,
+                            "title": "Skip Parse"
+                        },
+                        "description": "Skip Parse Server deletion"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Memory successfully deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/DeleteMemoryResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ErrorDetail"
+                                        }
+                                    ],
+                                    "title": "Response Delete Memory V1 V1 Memory  Memory Id  Delete",
+                                    "$ref": "#/components/schemas/DeleteMemoryResponse"
+                                }
+                            }
+                        }
+                    },
+                    "207": {
+                        "description": "Partially successful deletion",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeleteMemoryResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Memory not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "v1"
+                ],
+                "summary": "Get Memory V1",
+                "description": "Retrieve a memory item by ID.\n    \n    **Authentication Required**:\n    One of the following authentication methods must be used:\n    - Bearer token in `Authorization` header\n    - API Key in `X-API-Key` header\n    - Session token in `X-Session-Token` header\n    \n    **Required Headers**:\n    - X-Client-Type: (e.g., 'papr_plugin', 'browser_extension')",
+                "operationId": "get_memory_v1_v1_memory__memory_id__get",
+                "security": [
+                    {
+                        "APIKeyHeader": []
+                    },
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "memory_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Memory Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Memory successfully retrieved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/SearchResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ErrorDetail"
+                                        }
+                                    ],
+                                    "title": "Response Get Memory V1 V1 Memory  Memory Id  Get",
+                                    "$ref": "#/components/schemas/SearchResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Memory not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/memory/batch": {
+            "post": {
+                "tags": [
+                    "v1"
+                ],
+                "summary": "Add Memory Batch V1",
+                "description": "Add multiple memory items in a batch with size validation and background processing.\n    \n    **Authentication Required**:\n    One of the following authentication methods must be used:\n    - Bearer token in `Authorization` header\n    - API Key in `X-API-Key` header\n    - Session token in `X-Session-Token` header\n    \n    **Required Headers**:\n    - Content-Type: application/json\n    - X-Client-Type: (e.g., 'papr_plugin', 'browser_extension')\n    \n    The API validates individual memory content size against MAX_CONTENT_LENGTH environment variable (defaults to 15000 bytes).",
+                "operationId": "add_memory_batch_v1_v1_memory_batch_post",
+                "security": [
+                    {
+                        "APIKeyHeader": []
+                    },
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "skip_background_processing",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "description": "If True, skips adding background tasks for processing",
+                            "default": false,
+                            "title": "Skip Background Processing"
+                        },
+                        "description": "If True, skips adding background tasks for processing"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BatchMemoryRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Memories successfully added",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/BatchMemoryResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ErrorDetail"
+                                        }
+                                    ],
+                                    "title": "Response Add Memory Batch V1 V1 Memory Batch Post",
+                                    "$ref": "#/components/schemas/BatchMemoryResponse"
+                                }
+                            }
+                        }
+                    },
+                    "207": {
+                        "description": "Partial success - some memories failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BatchMemoryResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Subscription limit reached",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "413": {
+                        "description": "Content too large",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/document": {
+            "post": {
+                "tags": [
+                    "v1"
+                ],
+                "summary": "Upload Document V1",
+                "description": "Upload a document (PDF/HTML/TXT) to be processed and added to memory.\n    \n    **Authentication Required**:\n    One of the following authentication methods must be used:\n    - Bearer token in `Authorization` header\n    - API Key in `X-API-Key` header\n    - Session token in `X-Session-Token` header\n    \n    **Required Headers**:\n    - Content-Type: multipart/form-data\n    - X-Client-Type: (e.g., 'papr_plugin', 'browser_extension')\n    \n    **Form Data**:\n    - file: The document file to upload (PDF/HTML/TXT)\n    - metadata: (optional) JSON string containing additional metadata",
+                "operationId": "upload_document_v1_v1_document_post",
+                "security": [
+                    {
+                        "APIKeyHeader": []
+                    },
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "skip_background_processing",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "description": "If True, skips adding background tasks for processing",
+                            "default": false,
+                            "title": "Skip Background Processing"
+                        },
+                        "description": "If True, skips adding background tasks for processing"
+                    },
+                    {
+                        "name": "post_objectId",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "description": "Optional Post objectId for updating status",
+                            "title": "Post Objectid"
+                        },
+                        "description": "Optional Post objectId for updating status"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Document upload started",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/DocumentUploadResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ErrorDetail"
+                                        }
+                                    ],
+                                    "title": "Response Upload Document V1 V1 Document Post",
+                                    "$ref": "#/components/schemas/DocumentUploadResponse"
+                                }
+                            }
+                        }
+                    },
+                    "207": {
+                        "description": "Document upload started with degraded functionality",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DocumentUploadResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Subscription limit reached",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorDetail"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/v1/search": {
             "post": {
                 "tags": [
@@ -1383,6 +2148,103 @@
                 "title": "AddMemoryItem",
                 "description": "Response model for a single memory item in add_memory response"
             },
+            "AddMemoryRequest": {
+                "properties": {
+                    "content": {
+                        "type": "string",
+                        "title": "Content",
+                        "description": "The content of the memory item you want to add to memory"
+                    },
+                    "type": {
+                        "$ref": "#/components/schemas/MemoryType",
+                        "description": "Content type of the memory item",
+                        "default": "text"
+                    },
+                    "metadata": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/MemoryMetadata"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Metadata used in Neo4J and Pinecone for a memory item"
+                    },
+                    "context": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "$ref": "#/components/schemas/ContextItem"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Context",
+                        "description": "Context can be conversation history or any relevant context for a memory item"
+                    },
+                    "relationships_json": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "$ref": "#/components/schemas/RelationshipItem"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Relationships Json",
+                        "description": "Array of relationships that we can use in Graph DB (neo4J)"
+                    }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                    "content"
+                ],
+                "title": "AddMemoryRequest",
+                "description": "Request model for adding a new memory",
+                "example": {
+                    "content": "Meeting notes from the product planning session",
+                    "context": [
+                        {
+                            "content": "Let's discuss the Q2 product roadmap",
+                            "role": "user"
+                        },
+                        {
+                            "content": "I'll help you plan the roadmap. What are your key objectives?",
+                            "role": "assistant"
+                        }
+                    ],
+                    "imageGenerationCategory": "business_management",
+                    "metadata": {
+                        "conversationId": "conv-123",
+                        "createdAt": "2024-03-21T10:00:00Z",
+                        "emoji tags": "📊,💡,📝",
+                        "emotion tags": "focused, productive",
+                        "hierarchical structures": "Business/Planning/Product",
+                        "location": "Conference Room A",
+                        "sourceUrl": "https://meeting-notes.example.com/123",
+                        "topics": "product, planning"
+                    },
+                    "relationships_json": [
+                        {
+                            "metadata": {
+                                "relevance": "high"
+                            },
+                            "related_item_id": "previous_memory_item_id",
+                            "related_item_type": "TextMemoryItem",
+                            "relation_type": "follows"
+                        }
+                    ],
+                    "type": "text"
+                }
+            },
             "AddMemoryResponse": {
                 "properties": {
                     "code": {
@@ -1429,6 +2291,68 @@
                     "error"
                 ],
                 "title": "BatchMemoryError"
+            },
+            "BatchMemoryRequest": {
+                "properties": {
+                    "memories": {
+                        "items": {
+                            "$ref": "#/components/schemas/AddMemoryRequest"
+                        },
+                        "type": "array",
+                        "maxItems": 50,
+                        "minItems": 1,
+                        "title": "Memories",
+                        "description": "List of memory items to add in batch"
+                    },
+                    "batch_size": {
+                        "anyOf": [
+                            {
+                                "type": "integer",
+                                "maximum": 50.0,
+                                "minimum": 1.0
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Batch Size",
+                        "description": "Number of items to process in parallel",
+                        "default": 10
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "memories"
+                ],
+                "title": "BatchMemoryRequest",
+                "description": "Request model for batch adding memories",
+                "example": {
+                    "batch_size": 10,
+                    "memories": [
+                        {
+                            "content": "Meeting notes from the product planning session",
+                            "metadata": {
+                                "createdAt": "2024-03-21T10:00:00Z",
+                                "emoji tags": "📊,💡,📝",
+                                "emotion tags": "focused, productive",
+                                "hierarchical structures": "Business/Planning/Product",
+                                "topics": "product, planning"
+                            },
+                            "type": "text"
+                        },
+                        {
+                            "content": "Follow-up tasks from the planning meeting",
+                            "metadata": {
+                                "createdAt": "2024-03-21T11:00:00Z",
+                                "emoji tags": "✅,📋",
+                                "emotion tags": "organized",
+                                "hierarchical structures": "Business/Tasks/Planning",
+                                "topics": "tasks, planning"
+                            },
+                            "type": "text"
+                        }
+                    ]
+                }
             },
             "BatchMemoryResponse": {
                 "properties": {
@@ -1627,7 +2551,7 @@
                         ],
                         "title": "User Id"
                     },
-                    "source_type": {
+                    "sourceType": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -1636,9 +2560,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Source Type"
+                        "title": "Sourcetype"
                     },
-                    "source_url": {
+                    "sourceUrl": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -1647,9 +2571,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Source Url"
+                        "title": "Sourceurl"
                     },
-                    "page_id": {
+                    "pageId": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -1658,9 +2582,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Page Id"
+                        "title": "Pageid"
                     },
-                    "conversation_id": {
+                    "conversationId": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -1669,9 +2593,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Conversation Id"
+                        "title": "Conversationid"
                     },
-                    "created_at": {
+                    "createdAt": {
                         "anyOf": [
                             {
                                 "type": "string",
@@ -1681,9 +2605,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Created At"
+                        "title": "Createdat"
                     },
-                    "updated_at": {
+                    "updatedAt": {
                         "anyOf": [
                             {
                                 "type": "string",
@@ -1693,7 +2617,7 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Updated At"
+                        "title": "Updatedat"
                     },
                     "id": {
                         "type": "string",
@@ -1831,7 +2755,7 @@
                         ],
                         "title": "User Id"
                     },
-                    "source_type": {
+                    "sourceType": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -1840,9 +2764,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Source Type"
+                        "title": "Sourcetype"
                     },
-                    "source_url": {
+                    "sourceUrl": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -1851,9 +2775,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Source Url"
+                        "title": "Sourceurl"
                     },
-                    "page_id": {
+                    "pageId": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -1862,9 +2786,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Page Id"
+                        "title": "Pageid"
                     },
-                    "conversation_id": {
+                    "conversationId": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -1873,9 +2797,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Conversation Id"
+                        "title": "Conversationid"
                     },
-                    "created_at": {
+                    "createdAt": {
                         "anyOf": [
                             {
                                 "type": "string",
@@ -1885,9 +2809,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Created At"
+                        "title": "Createdat"
                     },
-                    "updated_at": {
+                    "updatedAt": {
                         "anyOf": [
                             {
                                 "type": "string",
@@ -1897,7 +2821,7 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Updated At"
+                        "title": "Updatedat"
                     },
                     "id": {
                         "type": "string",
@@ -1921,6 +2845,30 @@
                 ],
                 "title": "CompanyNodeProperties",
                 "description": "Company node properties"
+            },
+            "ContextItem": {
+                "properties": {
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "user",
+                            "assistant"
+                        ],
+                        "title": "Role"
+                    },
+                    "content": {
+                        "type": "string",
+                        "title": "Content"
+                    }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                    "role",
+                    "content"
+                ],
+                "title": "ContextItem",
+                "description": "Context item for memory request"
             },
             "DeleteMemoryResponse": {
                 "properties": {
@@ -2275,7 +3223,7 @@
                         ],
                         "title": "User Id"
                     },
-                    "source_type": {
+                    "sourceType": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -2284,9 +3232,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Source Type"
+                        "title": "Sourcetype"
                     },
-                    "source_url": {
+                    "sourceUrl": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -2295,9 +3243,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Source Url"
+                        "title": "Sourceurl"
                     },
-                    "page_id": {
+                    "pageId": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -2306,9 +3254,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Page Id"
+                        "title": "Pageid"
                     },
-                    "conversation_id": {
+                    "conversationId": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -2317,9 +3265,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Conversation Id"
+                        "title": "Conversationid"
                     },
-                    "created_at": {
+                    "createdAt": {
                         "anyOf": [
                             {
                                 "type": "string",
@@ -2329,9 +3277,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Created At"
+                        "title": "Createdat"
                     },
-                    "updated_at": {
+                    "updatedAt": {
                         "anyOf": [
                             {
                                 "type": "string",
@@ -2341,7 +3289,7 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Updated At"
+                        "title": "Updatedat"
                     },
                     "id": {
                         "type": "string",
@@ -2492,7 +3440,7 @@
                         ],
                         "title": "User Id"
                     },
-                    "source_type": {
+                    "sourceType": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -2501,9 +3449,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Source Type"
+                        "title": "Sourcetype"
                     },
-                    "source_url": {
+                    "sourceUrl": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -2512,9 +3460,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Source Url"
+                        "title": "Sourceurl"
                     },
-                    "page_id": {
+                    "pageId": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -2523,9 +3471,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Page Id"
+                        "title": "Pageid"
                     },
-                    "conversation_id": {
+                    "conversationId": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -2534,9 +3482,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Conversation Id"
+                        "title": "Conversationid"
                     },
-                    "created_at": {
+                    "createdAt": {
                         "anyOf": [
                             {
                                 "type": "string",
@@ -2546,9 +3494,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Created At"
+                        "title": "Createdat"
                     },
-                    "updated_at": {
+                    "updatedAt": {
                         "anyOf": [
                             {
                                 "type": "string",
@@ -2558,7 +3506,7 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Updated At"
+                        "title": "Updatedat"
                     },
                     "id": {
                         "type": "string",
@@ -2893,6 +3841,103 @@
                 ],
                 "title": "MemoryIDSourceLocation"
             },
+            "MemoryMetadata": {
+                "properties": {
+                    "topics": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Topics"
+                    },
+                    "hierarchical_structures": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Hierarchical Structures",
+                        "description": "Hierarchical structures to enable navigation from broad topics to specific ones"
+                    },
+                    "createdAt": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Createdat"
+                    },
+                    "location": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Location"
+                    },
+                    "emoji tags": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Emoji Tags"
+                    },
+                    "emotion tags": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Emotion Tags"
+                    },
+                    "conversationId": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Conversationid"
+                    },
+                    "sourceUrl": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Sourceurl"
+                    }
+                },
+                "additionalProperties": true,
+                "type": "object",
+                "title": "MemoryMetadata",
+                "description": "Metadata for memory request"
+            },
             "MemorySourceInfo": {
                 "properties": {
                     "memory_id_source_location": {
@@ -2933,6 +3978,16 @@
                 "type": "object",
                 "title": "MemorySourceLocation",
                 "description": "Tracks presence of a memory item in different storage systems."
+            },
+            "MemoryType": {
+                "type": "string",
+                "enum": [
+                    "text",
+                    "code_snippet",
+                    "document"
+                ],
+                "title": "MemoryType",
+                "description": "Valid memory types"
             },
             "NeoCodeNode": {
                 "properties": {
@@ -5120,7 +6175,7 @@
                         ],
                         "title": "User Id"
                     },
-                    "source_type": {
+                    "sourceType": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -5129,9 +6184,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Source Type"
+                        "title": "Sourcetype"
                     },
-                    "source_url": {
+                    "sourceUrl": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -5140,9 +6195,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Source Url"
+                        "title": "Sourceurl"
                     },
-                    "page_id": {
+                    "pageId": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -5151,9 +6206,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Page Id"
+                        "title": "Pageid"
                     },
-                    "conversation_id": {
+                    "conversationId": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -5162,9 +6217,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Conversation Id"
+                        "title": "Conversationid"
                     },
-                    "created_at": {
+                    "createdAt": {
                         "anyOf": [
                             {
                                 "type": "string",
@@ -5174,9 +6229,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Created At"
+                        "title": "Createdat"
                     },
-                    "updated_at": {
+                    "updatedAt": {
                         "anyOf": [
                             {
                                 "type": "string",
@@ -5186,7 +6241,7 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Updated At"
+                        "title": "Updatedat"
                     },
                     "id": {
                         "type": "string",
@@ -5354,7 +6409,7 @@
                         ],
                         "title": "User Id"
                     },
-                    "source_type": {
+                    "sourceType": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -5363,9 +6418,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Source Type"
+                        "title": "Sourcetype"
                     },
-                    "source_url": {
+                    "sourceUrl": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -5374,9 +6429,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Source Url"
+                        "title": "Sourceurl"
                     },
-                    "page_id": {
+                    "pageId": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -5385,9 +6440,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Page Id"
+                        "title": "Pageid"
                     },
-                    "conversation_id": {
+                    "conversationId": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -5396,9 +6451,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Conversation Id"
+                        "title": "Conversationid"
                     },
-                    "created_at": {
+                    "createdAt": {
                         "anyOf": [
                             {
                                 "type": "string",
@@ -5408,9 +6463,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Created At"
+                        "title": "Createdat"
                     },
-                    "updated_at": {
+                    "updatedAt": {
                         "anyOf": [
                             {
                                 "type": "string",
@@ -5420,7 +6475,7 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Updated At"
+                        "title": "Updatedat"
                     },
                     "id": {
                         "type": "string",
@@ -6027,7 +7082,7 @@
                         ],
                         "title": "User Id"
                     },
-                    "source_type": {
+                    "sourceType": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -6036,9 +7091,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Source Type"
+                        "title": "Sourcetype"
                     },
-                    "source_url": {
+                    "sourceUrl": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -6047,9 +7102,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Source Url"
+                        "title": "Sourceurl"
                     },
-                    "page_id": {
+                    "pageId": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -6058,9 +7113,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Page Id"
+                        "title": "Pageid"
                     },
-                    "conversation_id": {
+                    "conversationId": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -6069,9 +7124,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Conversation Id"
+                        "title": "Conversationid"
                     },
-                    "created_at": {
+                    "createdAt": {
                         "anyOf": [
                             {
                                 "type": "string",
@@ -6081,9 +7136,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Created At"
+                        "title": "Createdat"
                     },
-                    "updated_at": {
+                    "updatedAt": {
                         "anyOf": [
                             {
                                 "type": "string",
@@ -6093,7 +7148,7 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Updated At"
+                        "title": "Updatedat"
                     },
                     "id": {
                         "type": "string",
@@ -6231,7 +7286,7 @@
                         ],
                         "title": "User Id"
                     },
-                    "source_type": {
+                    "sourceType": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -6240,9 +7295,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Source Type"
+                        "title": "Sourcetype"
                     },
-                    "source_url": {
+                    "sourceUrl": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -6251,9 +7306,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Source Url"
+                        "title": "Sourceurl"
                     },
-                    "page_id": {
+                    "pageId": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -6262,9 +7317,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Page Id"
+                        "title": "Pageid"
                     },
-                    "conversation_id": {
+                    "conversationId": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -6273,9 +7328,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Conversation Id"
+                        "title": "Conversationid"
                     },
-                    "created_at": {
+                    "createdAt": {
                         "anyOf": [
                             {
                                 "type": "string",
@@ -6285,9 +7340,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Created At"
+                        "title": "Createdat"
                     },
-                    "updated_at": {
+                    "updatedAt": {
                         "anyOf": [
                             {
                                 "type": "string",
@@ -6297,7 +7352,7 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Updated At"
+                        "title": "Updatedat"
                     },
                     "id": {
                         "type": "string",
@@ -6383,6 +7438,40 @@
                 ],
                 "title": "RelatedMemoryResult",
                 "description": "Return type for find_related_memory_items_async"
+            },
+            "RelationshipItem": {
+                "properties": {
+                    "related_item_id": {
+                        "type": "string",
+                        "enum": [
+                            "TextMemoryItem",
+                            "previous_memory_item_id"
+                        ],
+                        "title": "Related Item Id"
+                    },
+                    "relation_type": {
+                        "type": "string",
+                        "title": "Relation Type"
+                    },
+                    "related_item_type": {
+                        "type": "string",
+                        "const": "TextMemoryItem",
+                        "title": "Related Item Type"
+                    },
+                    "metadata": {
+                        "type": "object",
+                        "title": "Metadata"
+                    }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                    "related_item_id",
+                    "relation_type",
+                    "related_item_type"
+                ],
+                "title": "RelationshipItem",
+                "description": "Relationship item for memory request"
             },
             "SearchRequest": {
                 "properties": {
@@ -6602,7 +7691,7 @@
                         ],
                         "title": "User Id"
                     },
-                    "source_type": {
+                    "sourceType": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -6611,9 +7700,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Source Type"
+                        "title": "Sourcetype"
                     },
-                    "source_url": {
+                    "sourceUrl": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -6622,9 +7711,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Source Url"
+                        "title": "Sourceurl"
                     },
-                    "page_id": {
+                    "pageId": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -6633,9 +7722,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Page Id"
+                        "title": "Pageid"
                     },
-                    "conversation_id": {
+                    "conversationId": {
                         "anyOf": [
                             {
                                 "type": "string"
@@ -6644,9 +7733,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Conversation Id"
+                        "title": "Conversationid"
                     },
-                    "created_at": {
+                    "createdAt": {
                         "anyOf": [
                             {
                                 "type": "string",
@@ -6656,9 +7745,9 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Created At"
+                        "title": "Createdat"
                     },
-                    "updated_at": {
+                    "updatedAt": {
                         "anyOf": [
                             {
                                 "type": "string",
@@ -6668,7 +7757,7 @@
                                 "type": "null"
                             }
                         ],
-                        "title": "Updated At"
+                        "title": "Updatedat"
                     },
                     "id": {
                         "type": "string",
@@ -6768,6 +7857,108 @@
                 ],
                 "title": "UpdateMemoryItem",
                 "description": "Model for a single updated memory item"
+            },
+            "UpdateMemoryRequest": {
+                "properties": {
+                    "content": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Content",
+                        "description": "The new content of the memory item"
+                    },
+                    "type": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/MemoryType"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Content type of the memory item"
+                    },
+                    "metadata": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/MemoryMetadata"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Updated metadata for Neo4J and Pinecone"
+                    },
+                    "context": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "$ref": "#/components/schemas/ContextItem"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Context",
+                        "description": "Updated context for the memory item"
+                    },
+                    "relationships_json": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "$ref": "#/components/schemas/RelationshipItem"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Relationships Json",
+                        "description": "Updated relationships for Graph DB (neo4J)"
+                    }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "title": "UpdateMemoryRequest",
+                "description": "Request model for updating an existing memory",
+                "example": {
+                    "content": "Updated meeting notes from the product planning session",
+                    "context": [
+                        {
+                            "content": "Let's update the Q2 product roadmap",
+                            "role": "user"
+                        },
+                        {
+                            "content": "I'll help you update the roadmap. What changes would you like to make?",
+                            "role": "assistant"
+                        }
+                    ],
+                    "metadata": {
+                        "emoji tags": "📊,💡,📝,✨",
+                        "emotion tags": "focused, productive, satisfied",
+                        "hierarchical structures": "Business/Planning/Product/Updates",
+                        "topics": "product, planning, updates"
+                    },
+                    "relationships_json": [
+                        {
+                            "metadata": {
+                                "relevance": "high"
+                            },
+                            "related_item_id": "previous_memory_item_id",
+                            "related_item_type": "TextMemoryItem",
+                            "relation_type": "updates"
+                        }
+                    ],
+                    "type": "text"
+                }
             },
             "UpdateMemoryResponse": {
                 "properties": {
