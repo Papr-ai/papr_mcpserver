@@ -1443,6 +1443,8 @@ dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
     { name = "python-dotenv" },
+    { name = "pyyaml" },
+    { name = "requests" },
 ]
 
 [package.optional-dependencies]
@@ -1507,6 +1509,8 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=4.1.0" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "python-socketio", marker = "extra == 'dev'", specifier = ">=5.0.0" },
+    { name = "pyyaml", specifier = ">=6.0.0" },
+    { name = "requests", specifier = ">=2.31.0" },
     { name = "scipy", marker = "extra == 'ml'", specifier = ">=1.11.0" },
     { name = "sentence-transformers", marker = "extra == 'ml'", specifier = ">=2.2.2" },
     { name = "transformers", marker = "extra == 'ml'", specifier = ">=4.36.0" },

@@ -75,6 +75,16 @@ def get_default_mcp_path():
         logger.debug(f"Config file path: {config_file}")
     return path, config_file
 
+def read_env_api_key():
+    """Read API key from .env file"""
+    env_path = Path(".env")
+    if env_path.exists():
+        with open(env_path, 'r') as f:
+            for line in f:
+                if line.startswith('PAPR_API_KEY='):
+                    return line.strip().split('=', 1)[1]
+    return None
+
 def update_env_file(api_key):
     """Update or create .env file with API key"""
     env_path = Path(".env")
@@ -93,7 +103,7 @@ def update_env_file(api_key):
 
     # Update API key
     env_vars['PAPR_API_KEY'] = api_key
-    env_vars['MEMERY_SERVER_URL'] = 'https://memory.papr.ai'
+    env_vars['MEMORY_SERVER_URL'] = 'https://memory.papr.ai'
 
     # Write back to .env file
     try:
@@ -105,7 +115,7 @@ def update_env_file(api_key):
         logger.error(f"Error updating .env file: {e}")
         raise
 
-def update_mcp_config():
+def update_mcp_config(api_key):
     """Update MCP config for Claude"""
     path, config_file = get_default_mcp_path()
     logger.debug(f"Creating MCP directory at: {path}")
@@ -142,7 +152,7 @@ def update_mcp_config():
                 ],
                 "env": {
                     "PYTHONPATH": str(cwd),
-                    "PAPR_API_KEY": os.getenv("PAPR_API_KEY", "")                   
+                    "PAPR_API_KEY": api_key                   
                 }
             }
         }
@@ -226,11 +236,15 @@ def main():
                 sys.exit(1)
             print("✓ Dependencies installed")
         
-        # Get API key from user or environment
-        api_key = os.getenv("PAPR_API_KEY")  
+        # Get API key from user or .env file
+        api_key = read_env_api_key()
         if api_key:
-            print("API key stored in .env file")
-        api_key = input("Please enter your Papr API key: ").strip()
+            print(f"Found existing API key in .env file")
+            use_existing = input("Use existing API key? (y/n): ").lower().strip()
+            if use_existing != 'y':
+                api_key = input("Please enter your Papr API key: ").strip()
+        else:
+            api_key = input("Please enter your Papr API key: ").strip()
         
         if not api_key:
             logger.error("No API key provided")
@@ -244,7 +258,7 @@ def main():
         
         # Update MCP config
         print("\nUpdating MCP configuration...")
-        update_mcp_config()
+        update_mcp_config(api_key)
         print("✓ MCP configuration updated")
         
         # Ask to run paprmcp.py
