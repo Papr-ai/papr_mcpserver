@@ -2,6 +2,10 @@
 
 A FastAPI-based MCP (Memory Control Protocol) server implementation for integrating with Papr's memory services (https://papr.ai).
 
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](../LICENSE) file for details.
+
 ## Prerequisites
 
 - Python 3.10 or higher
