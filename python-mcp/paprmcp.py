@@ -87,38 +87,52 @@ class CustomFastMCP(FastMCPOpenAPI):
         # Override the tool manager's call_tool method
         original_call_tool = self._tool_manager.call_tool
         
-        async def custom_call_tool(name: str, arguments: dict[str, Any], context: Any = None) -> Any:
-            logger.info(f"Custom call_tool called with name={name}, arguments={arguments}")
-            print(f"Custom call_tool called with name={name}, arguments={arguments}", file=sys.stderr)
+        async def custom_call_tool(*args, **kwargs) -> Any:
+            logger.info(f"Custom call_tool called with args={args}, kwargs={kwargs}")
+            print(f"Custom call_tool called with args={args}, kwargs={kwargs}", file=sys.stderr)
             try:
-                result = await original_call_tool(name, arguments, context)
+                # Extract name and arguments from the call
+                if len(args) >= 2:
+                    name = args[0]
+                    arguments = args[1]
+                elif 'name' in kwargs and 'arguments' in kwargs:
+                    name = kwargs['name']
+                    arguments = kwargs['arguments']
+                elif 'key' in kwargs and 'arguments' in kwargs:
+                    # MCP inspector uses 'key' instead of 'name'
+                    name = kwargs['key']
+                    arguments = kwargs['arguments']
+                else:
+                    raise ValueError(f"Could not extract name and arguments from call. Args: {args}, Kwargs: {kwargs}")
+                
+                logger.info(f"Extracted name={name}, arguments={arguments}")
+                print(f"Extracted name={name}, arguments={arguments}", file=sys.stderr)
+                
+                # Call the original function with the correct arguments
+                # Try different argument combinations to handle various calling patterns
+                try:
+                    if len(args) >= 3:
+                        # Called with 3+ positional arguments
+                        result = await original_call_tool(*args)
+                    elif 'context' in kwargs:
+                        result = await original_call_tool(name, arguments, kwargs['context'])
+                    else:
+                        result = await original_call_tool(name, arguments)
+                except TypeError as e:
+                    # If the above fails, try with just name and arguments
+                    logger.warning(f"First call attempt failed: {e}, trying alternative")
+                    try:
+                        result = await original_call_tool(name, arguments)
+                    except TypeError as e2:
+                        # If that fails too, try with all kwargs
+                        logger.warning(f"Second call attempt failed: {e2}, trying with kwargs")
+                        result = await original_call_tool(name, arguments, **kwargs)
                 logger.info(f"Custom call_tool result: {result}")
                 print(f"Custom call_tool result: {result}", file=sys.stderr)
                 
-                # If the result is a dictionary
-                if isinstance(result, dict):
-                    # Check if it's an API response with 'data' field
-                    if 'data' in result:
-                        return [TextContent(text=json.dumps(result['data']), type="text")]
-                    # Check if it's an error response
-                    elif 'error' in result or 'detail' in result:
-                        return [TextContent(text=json.dumps(result), type="text")]
-                    # For other dictionary responses
-                    return [TextContent(text=json.dumps(result), type="text")]
-                
-                # If the result is already a list of content objects
-                if isinstance(result, list) and all(
-                    isinstance(item, (TextContent, ImageContent, EmbeddedResource))
-                    for item in result
-                ):
-                    return result
-                
-                # For string results
-                if isinstance(result, str):
-                    return [TextContent(text=result, type="text")]
-                
-                # For any other type
-                return [TextContent(text=str(result), type="text")]
+                # Return the result as-is - let FastMCP handle the conversion
+                # The original call_tool method already returns the correct format
+                return result
             except Exception as e:
                 logger.error(f"Error in custom_call_tool: {str(e)}")
                 logger.error(f"Traceback: {traceback.format_exc()}")
@@ -128,6 +142,28 @@ class CustomFastMCP(FastMCPOpenAPI):
         
         # Replace the tool manager's call_tool method
         self._tool_manager.call_tool = custom_call_tool
+        
+        # Filter tools to show only memory-related tools
+        self._filter_memory_tools()
+    
+    def _filter_memory_tools(self):
+        """Filter tools to show only memory-related tools"""
+        # Define the allowed memory tools
+        allowed_tools = {
+            'add_memory', 'get_memory', 'update_memory', 'delete_memory', 'search_memory'
+        }
+        
+        # Get all current tools
+        all_tools = dict(self._tool_manager._tools)
+        
+        # Filter to only memory tools
+        filtered_tools = {name: tool for name, tool in all_tools.items() if name in allowed_tools}
+        
+        # Replace the tools dictionary
+        self._tool_manager._tools = filtered_tools
+        
+        logger.info(f"Filtered tools to memory-only: {list(filtered_tools.keys())}")
+        print(f"Filtered tools to memory-only: {list(filtered_tools.keys())}", file=sys.stderr)
 
 def init_mcp():
     """Initialize MCP server with OpenAPI spec and HTTP client"""

@@ -38,12 +38,28 @@ call .venv\Scripts\activate.bat
 
 echo Installing requirements...
 uv pip install -r requirements.txt
-uv pip install -r requirements-test.txt
+if exist requirements-test.txt (
+    uv pip install -r requirements-test.txt
+) else (
+    echo requirements-test.txt not found, skipping test dependencies
+)
 
 echo Running tests...
-pytest tests/ -v
-
-echo Running coverage report...
-pytest tests/ --cov=paprmcp --cov-report=term-missing
-
-echo Tests completed successfully! 
+if exist tests\ (
+    pytest tests/ -v
+    if %ERRORLEVEL% NEQ 0 (
+        echo Tests failed!
+        exit /b 1
+    )
+    
+    echo Running coverage report...
+    pytest tests/ --cov=paprmcp --cov-report=term-missing
+    if %ERRORLEVEL% NEQ 0 (
+        echo Coverage report failed!
+        exit /b 1
+    )
+    
+    echo Tests completed successfully!
+) else (
+    echo No tests directory found, skipping tests
+) 
