@@ -150,7 +150,7 @@ class CustomFastMCP(FastMCPOpenAPI):
         """Filter tools to show only memory-related tools"""
         # Define the allowed memory tools
         allowed_tools = {
-            'add_memory', 'get_memory', 'update_memory', 'delete_memory', 'search_memory'
+            'add_memory', 'get_memory', 'update_memory', 'delete_memory', 'search_memory', 'submit_feedback','submit_batch_feedback','add_memory_batch'
         }
         
         # Get all current tools

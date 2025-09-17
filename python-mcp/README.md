@@ -9,7 +9,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](../LIC
 ## Prerequisites
 
 - Python 3.10 or higher
-- **Get your API key:** You can find it in the settings section of **[papr.ai](https://papr.ai)**. You'll need to create an account first and quickly go through our web app onboarding.
+- **Get your API key:** You can find it in the settings section of **[papr.ai](https://papr.ai)**. You'll need to create a developer account on Papr to get your API key.
 
 ## Quick Start
 
