@@ -77,8 +77,8 @@ include = ["papr_memory_mcp*"]
 papr_memory_mcp = ["services/*"]
 
 [project.scripts]
-papr-mcp = "paprmcp:main"
-papr-memory-mcp = "paprmcp:main"
+papr-mcp = "papr_memory_mcp.paprmcp:main"
+papr-memory-mcp = "papr_memory_mcp.paprmcp:main"
 
 [project.urls]
 Homepage = "https://github.com/Papr-ai/papr_mcpserver"
