@@ -36,15 +36,12 @@ jobs:
         twine check dist/*
 
     - name: Publish to PyPI
-      uses: pypa/gh-action-pypi@release/v1
-      with:
-        user: __token__
-        password: ${{ secrets.PYPI_API_TOKEN }}
-        skip_existing: true
-        path: python-mcp/dist/*
+      run: |
+        cd python-mcp
+        twine upload dist/* --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} --skip-existing
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: dist
         path: python-mcp/dist/
