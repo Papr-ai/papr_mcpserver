@@ -1,0 +1,20 @@
+include README.md
+include LICENSE
+include CHANGELOG.md
+include requirements.txt
+include pyproject.toml
+recursive-include papr_memory_mcp *.py
+recursive-include papr_memory_mcp *.yaml
+recursive-include papr_memory_mcp *.yml
+recursive-include papr_memory_mcp *.json
+recursive-include scripts *.sh
+recursive-include scripts *.bat
+recursive-include scripts *.ps1
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude .git*
+global-exclude .DS_Store
+global-exclude *.egg-info
+global-exclude .venv
+global-exclude .env
+global-exclude logs/*

@@ -13,17 +13,14 @@
 # limitations under the License.
 
 """
-Root entry point for papr-memory-mcp.
+Package entry point for papr-memory-mcp.
 This file imports from the shared core module to avoid duplication.
 """
 
-from papr_memory_mcp.core import main, CustomFastMCP, init_mcp, mcp
+from .core import main, CustomFastMCP, init_mcp, mcp
 
 # Re-export the main components
 __all__ = ["main", "CustomFastMCP", "init_mcp", "mcp"]
 
 if __name__ == "__main__":
     main()
-
-
-

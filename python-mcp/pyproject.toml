@@ -1,26 +1,32 @@
 [project]
 name = "papr-memory-mcp"
 version = "0.1.0"
-description = "Papr Memory API integration"
+description = "Papr Memory API integration for MCP (Model Context Protocol) servers"
 requires-python = ">=3.10"
 authors = [
-    { name = "Papr Team" }
+    { name = "Papr Team", email = "support@papr.ai" }
 ]
-license = { text = "Apache-2.0" }
+maintainers = [
+    { name = "Papr Team", email = "support@papr.ai" }
+]
+license = "Apache-2.0"
 readme = "README.md"
-keywords = ["mcp", "memory", "ai", "papr"]
+keywords = ["mcp", "memory", "ai", "papr", "model-context-protocol", "fastmcp"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Communications",
+    "Operating System :: OS Independent",
 ]
 dependencies = [
     "fastmcp>=2.10.5",  # Update to latest version
+    "fastapi>=0.100.0",  # Add FastAPI dependency
     "httpx>=0.26.0",
     "pydantic>=2.0.0",
     "python-dotenv>=1.0.0",
@@ -60,24 +66,26 @@ all = [
 ]
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
 
-[tool.hatch.build.targets.wheel]
-packages = ["."]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["papr_memory_mcp*"]
 
-[tool.hatch.envs.default]
-dependencies = [
-    "papr-memory-mcp[dev,test]",
-]
-
-[tool.hatch.envs.dev]
-dependencies = [
-    "papr-memory-mcp[all]",
-]
+[tool.setuptools.package-data]
+papr_memory_mcp = ["services/*"]
 
 [project.scripts]
-debug-server = "debugpy:run"
+papr-mcp = "paprmcp:main"
+papr-memory-mcp = "paprmcp:main"
+
+[project.urls]
+Homepage = "https://github.com/Papr-ai/papr_mcpserver"
+Documentation = "https://github.com/Papr-ai/papr_mcpserver/tree/main/python-mcp"
+Repository = "https://github.com/Papr-ai/papr_mcpserver"
+Issues = "https://github.com/Papr-ai/papr_mcpserver/issues"
+Changelog = "https://github.com/Papr-ai/papr_mcpserver/blob/main/python-mcp/CHANGELOG.md"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
