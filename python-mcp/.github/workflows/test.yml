@@ -24,11 +24,13 @@ jobs:
 
     - name: Install dependencies
       run: |
+        cd python-mcp
         python -m pip install --upgrade pip
         pip install -e ".[test]"
 
     - name: Run tests
       run: |
+        cd python-mcp
         pytest --cov=papr_memory_mcp --cov-report=xml
 
     - name: Upload coverage to Codecov

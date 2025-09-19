@@ -26,10 +26,14 @@ jobs:
         pip install build twine
 
     - name: Build package
-      run: python -m build
+      run: |
+        cd python-mcp
+        python -m build
 
     - name: Check package
-      run: twine check dist/*
+      run: |
+        cd python-mcp
+        twine check dist/*
 
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi@release/v1
@@ -37,9 +41,10 @@ jobs:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
         skip_existing: true
+        path: python-mcp/dist/*
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
         name: dist
-        path: dist/
+        path: python-mcp/dist/
