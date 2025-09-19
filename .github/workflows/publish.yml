@@ -38,7 +38,7 @@ jobs:
     - name: Publish to PyPI
       run: |
         cd python-mcp
-        twine upload dist/* --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} --skip-existing
+        twine upload dist/* --username __token__ --password ${{ secrets.PYPI_API_TOKEN }}
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
