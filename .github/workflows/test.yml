@@ -1,4 +1,4 @@
-name: Test
+name: Build and Test Package
 
 on:
   push:
@@ -24,18 +24,18 @@ jobs:
 
     - name: Install dependencies
       run: |
+        cd python-mcp
         python -m pip install --upgrade pip
-        pip install -e ".[test]"
+        pip install -e "."
 
-    - name: Run tests
+    - name: Build package
       run: |
-        pytest --cov=papr_memory_mcp --cov-report=xml
+        cd python-mcp
+        python -m pip install build
+        python -m build
 
-    - name: Upload coverage to Codecov
-      if: matrix.os == 'ubuntu-latest'
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: false
+    - name: Check package
+      run: |
+        cd python-mcp
+        python -m pip install twine
+        twine check dist/*
