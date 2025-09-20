@@ -39,3 +39,12 @@ jobs:
         cd python-mcp
         python -m pip install twine
         twine check dist/*
+
+    - name: Test MCP Methods
+      run: |
+        cd python-mcp
+        python test_mcp_ci.py
+      env:
+        MEMORY_SERVER_URL: ${{ secrets.MEMORY_SERVER_URL || 'https://memory.papr.ai' }}
+        PAPR_API_KEY: ${{ secrets.PAPR_API_KEY || 'test-key' }}
+      continue-on-error: true

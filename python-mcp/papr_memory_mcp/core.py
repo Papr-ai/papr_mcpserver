@@ -89,8 +89,12 @@ class CustomFastMCP(FastMCPOpenAPI):
         **settings: Any,
     ):
         print("Initializing CustomFastMCP...", file=sys.stderr)
+        
+        # Convert OpenAPI 3.1 to JSON Schema format for MCP compatibility
+        converted_spec = self._convert_openapi_to_json_schema(openapi_spec)
+        
         super().__init__(
-            openapi_spec=openapi_spec,
+            openapi_spec=converted_spec,
             client=client,
             name=name or "Papr Memory MCP",
             route_maps=route_maps,
@@ -162,6 +166,21 @@ class CustomFastMCP(FastMCPOpenAPI):
         
         # Filter tools to show only memory-related tools
         self._filter_memory_tools()
+    
+    def _convert_openapi_to_json_schema(self, openapi_spec: dict[str, Any]) -> dict[str, Any]:
+        """
+        Convert OpenAPI 3.1 spec to JSON Schema format for MCP compatibility.
+        This adds $defs alongside components.schemas for better compatibility.
+        """
+        converted_spec = openapi_spec.copy()
+        
+        # Add $defs alongside components.schemas for MCP compatibility
+        if "components" in converted_spec and "schemas" in converted_spec["components"]:
+            converted_spec["$defs"] = converted_spec["components"]["schemas"]
+            logger.info("Added $defs alongside components.schemas for MCP compatibility")
+            print("Added $defs alongside components.schemas for MCP compatibility", file=sys.stderr)
+        
+        return converted_spec
     
     def _filter_memory_tools(self):
         """Filter tools to show only memory-related tools"""
