@@ -1,6 +1,6 @@
 [project]
 name = "papr-memory-mcp"
-version = "0.1.2"
+version = "0.1.4"
 description = "Papr Memory API integration for MCP (Model Context Protocol) servers"
 requires-python = ">=3.10"
 authors = [
@@ -79,6 +79,7 @@ papr_memory_mcp = ["services/*"]
 [project.scripts]
 papr-mcp = "papr_memory_mcp.paprmcp:main"
 papr-memory-mcp = "papr_memory_mcp.paprmcp:main"
+setup-cursor-mcp = "papr_memory_mcp.install_mcp_config:main"
 
 [project.urls]
 Homepage = "https://github.com/Papr-ai/papr_mcpserver"

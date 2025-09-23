@@ -11,70 +11,64 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](../LIC
 - Python 3.10 or higher
 - **Get your API key:** You can find it in the settings section of **[papr.ai](https://papr.ai)**. You'll need to create a developer account on Papr to get your API key.
 
-## Quick Start
+## Quick Start (Recommended)
 
-1. Clone this repository for Python MCP Papr Server:
+Run the universal setup script and follow the prompts:
+
+```bash
+python setup_mcp.py
+```
+
+What this does:
+- Lets you choose your application (Cursor, Claude, or Other)
+- Uses the PyPI package `papr-memory-mcp` with `uv` for automatic installation
+- Prompts for your Papr API key
+- Creates/updates the MCP configuration in the correct location
+- For "Other", prints the JSON you can copy into your client's config
+
+After setup, restart your selected application.
+
+> **Note:** This method uses the published PyPI package `papr-memory-mcp` which is automatically installed and managed by `uv`. No local code changes needed.
+
+## Alternative: Run Locally (Developer Mode)
+
+If you prefer to run the MCP server locally from source:
+
+1) Clone and enter the repo
 ```bash
 git clone https://github.com/Papr-ai/papr_mcpserver
-cd python-mcp
+cd papr_mcpserver/python-mcp
 ```
 
-2. Run the setup script:
+2) Create and activate a virtual environment (recommended)
 ```bash
-# Try python3 first (recommended for cross-platform compatibility)
-python3 setup_run_mcp.py
-
-# If python3 is not found, use python instead
-python setup_run_mcp.py
+uv venv
+source .venv/bin/activate    # macOS/Linux
+# or on Windows PowerShell
+.venv\Scripts\Activate.ps1
 ```
 
-> **Note:** If `python3` command is not found on your system, use `python` instead. This is common on Windows systems where Python 3 is installed as the default `python` command.
-
-The setup script will guide you through the following steps:
-
-1. **Dependencies Installation**
-   - Installs `uv` if not already present
-   - Creates a virtual environment (default '.venv')
-   - Installs all required project dependencies
-
-2. **API Key Configuration**
-   - Prompts for your Papr API key
-   - Validates the key format
-   - Stores it securely in `.env` file
-
-3. **MCP Client Selection**
-   - Choose your preferred client:
-     - Claude
-     - Cursor AI
-     - Other
-
-4. **Client Configuration**
-   - For Claude: Automatically configures `claude_desktop_config.json`
-   - For Cursor AI: Automatically configures `./cursor/mcp.json`
-   - For Other clients: Displays the configuration JSON in console (you'll need to manually copy this to your client's configuration)
-
-> **Note:** If you select "Other" as your client, the script will print the MCP configuration JSON to the console. You'll need to manually copy this configuration to your client's appropriate configuration file.
-
-The script will then:
-- Start the MCP server (optional)
-
-
-> **Tip:** You can always start the server later using the options described in the "Manual Server Start" section below.
-
-## Setup Options
-
-You can run the setup script with different options:
-
+3) Install dependencies
 ```bash
-# Full setup with all prompts
-python3 setup_run_mcp.py  # or python setup_run_mcp.py
-
-# Skip dependency installation
-python3 setup_run_mcp.py --skip-deps  # or python setup_run_mcp.py --skip-deps
-
-# Skip setup and run server 
-python3 setup_run_mcp.py --run-server  # or python setup_run_mcp.py --run-server
+uv pip install -e .[dev]
 ```
+
+4) Set your API key
+```bash
+export PAPR_API_KEY=your_api_key_here        # macOS/Linux
+setx PAPR_API_KEY your_api_key_here          # Windows (new shells)
+$env:PAPR_API_KEY="your_api_key_here"       # Windows PowerShell (current shell)
+```
+
+5) Start the server
+```bash
+uv run python paprmcp.py
+# or for interactive development
+fastmcp dev paprmcp.py
+```
+
+6) Point your client to the server
+- Use the JSON from the README (or run `python setup_mcp.py` and pick "Other") to configure your client's `mcp.json`.
 
 ## Start Server Directly
 
@@ -229,5 +223,4 @@ If you encounter any issues:
    - Make sure all dependencies are installed correctly
 
 For additional help, please contact support or open an issue in the repository.
-
 
