@@ -9,6 +9,7 @@ import json
 import sys
 import subprocess
 from pathlib import Path
+import platform
 
 def get_application_config_path(app_name):
     """Get the MCP configuration file path for different applications"""
@@ -23,13 +24,11 @@ def get_application_config_path(app_name):
             return config_dir / "mcp.json"
     elif app_name.lower() == "claude":
         if sys.platform == "win32":
-            return Path.home() / ".claude" / "mcp.json"
+            return Path.home() / "AppData" / "Roaming" / "Claude" / "claude_desktop_config.json"
         elif sys.platform == "darwin":
-            config_dir = Path.home() / "Library" / "Application Support" / "Claude" / "mcp"
-            return config_dir / "mcp.json"
+            return Path.home() / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json"
         else:
-            config_dir = Path.home() / ".config" / "claude" / "mcp"
-            return config_dir / "mcp.json"
+            return Path.home() / ".config" / "claude" / "claude_desktop_config.json"
     else:
         # Generic path for other applications
         return Path.home() / f".{app_name.lower()}" / "mcp.json"
@@ -230,6 +229,41 @@ def create_generic_config(api_key, use_env_var=True):
     
     return "generic"
 
+def set_system_environment_variable(key, value):
+    """Set system-wide environment variable"""
+    try:
+        if platform.system() == "Windows":
+            # Use setx command for Windows
+            result = subprocess.run(
+                ["setx", key, value], 
+                capture_output=True, 
+                text=True, 
+                check=True
+            )
+            return True, "System-wide environment variable set successfully"
+        else:
+            # For Unix-like systems, add to shell profile
+            shell_profile = None
+            if os.path.exists(os.path.expanduser("~/.bashrc")):
+                shell_profile = os.path.expanduser("~/.bashrc")
+            elif os.path.exists(os.path.expanduser("~/.zshrc")):
+                shell_profile = os.path.expanduser("~/.zshrc")
+            elif os.path.exists(os.path.expanduser("~/.profile")):
+                shell_profile = os.path.expanduser("~/.profile")
+            
+            if shell_profile:
+                # Add export statement to shell profile
+                export_line = f'export {key}="{value}"\n'
+                with open(shell_profile, 'a') as f:
+                    f.write(f"\n# Papr Memory MCP API Key\n{export_line}")
+                return True, f"Environment variable added to {shell_profile}. Please restart your terminal or run 'source {shell_profile}'"
+            else:
+                return False, "Could not find shell profile file"
+    except subprocess.CalledProcessError as e:
+        return False, f"Failed to set system environment variable: {e}"
+    except Exception as e:
+        return False, f"Error setting system environment variable: {e}"
+
 def get_api_key():
     """Get API key from user input or environment"""
     api_key = os.getenv("PAPR_API_KEY")
@@ -255,13 +289,16 @@ def get_api_key():
                 print()
                 save_env = input("Save to environment variables? (y/n): ").strip().lower()
                 if save_env in ['y', 'yes']:
-                    # Try to set environment variable
-                    try:
-                        os.environ["PAPR_API_KEY"] = api_key
-                        print("✅ API key saved to current session")
+                    # Try to set system-wide environment variable
+                    success, message = set_system_environment_variable("PAPR_API_KEY", api_key)
+                    if success:
+                        print(f"✅ {message}")
                         saved_to_env = True
-                    except:
-                        print("⚠️  Could not save to environment, but will use for this session")
+                    else:
+                        print(f"⚠️  {message}")
+                        print("   Falling back to session-only environment variable")
+                        os.environ["PAPR_API_KEY"] = api_key
+                        saved_to_env = True
                 else:
                     print("⚠️  API key not saved to environment variables")
                     print("   The MCP server will need the API key to be set manually")
