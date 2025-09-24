@@ -89,12 +89,12 @@ class CustomFastMCP(FastMCPOpenAPI):
         **settings: Any,
     ):
         print("Initializing CustomFastMCP...", file=sys.stderr)
-        
-        # Convert OpenAPI 3.1 to JSON Schema format for MCP compatibility
-        converted_spec = self._convert_openapi_to_json_schema(openapi_spec)
-        
+
+        # The JSON Schema endpoint already provides the correct format with $defs
+        # No conversion needed since we're using /openapi-json-schema.json
+
         super().__init__(
-            openapi_spec=converted_spec,
+            openapi_spec=openapi_spec,
             client=client,
             name=name or "Papr Memory MCP",
             route_maps=route_maps,
@@ -167,7 +167,8 @@ class CustomFastMCP(FastMCPOpenAPI):
         # Filter tools to show only memory-related tools
         self._filter_memory_tools()
     
-    def _convert_openapi_to_json_schema(self, openapi_spec: dict[str, Any]) -> dict[str, Any]:
+    @staticmethod
+    def _convert_openapi_to_json_schema(openapi_spec: dict[str, Any]) -> dict[str, Any]:
         """
         Convert OpenAPI 3.1 spec to JSON Schema format for MCP compatibility.
         This properly converts components/schemas to $defs and updates all references.
@@ -179,9 +180,12 @@ class CustomFastMCP(FastMCPOpenAPI):
         
         # Add $defs alongside components.schemas for MCP compatibility
         if "components" in converted_spec and "schemas" in converted_spec["components"]:
-            converted_spec["$defs"] = converted_spec["components"]["schemas"]
-            logger.info("Added $defs alongside components.schemas for MCP compatibility")
+            # Create a deep copy of the schemas to avoid reference issues
+            import copy
+            converted_spec["$defs"] = copy.deepcopy(converted_spec["components"]["schemas"])
             print("Added $defs alongside components.schemas for MCP compatibility", file=sys.stderr)
+            print(f"DEBUG: $defs created with {len(converted_spec['$defs'])} schemas", file=sys.stderr)
+            print(f"DEBUG: Memory in $defs: {'Memory' in converted_spec['$defs']}", file=sys.stderr)
             
             # Convert all references from #/components/schemas/ to #/$defs/
             def convert_refs(obj):
@@ -201,8 +205,18 @@ class CustomFastMCP(FastMCPOpenAPI):
             
             # Convert all references in the spec
             convert_refs(converted_spec)
-            logger.info("Converted all schema references from OpenAPI to JSON Schema format")
             print("Converted all schema references from OpenAPI to JSON Schema format", file=sys.stderr)
+            
+            # Ensure $defs is at the root level and properly formatted
+            if "$defs" not in converted_spec:
+                print("ERROR: $defs not found after conversion!", file=sys.stderr)
+            else:
+                print(f"SUCCESS: $defs section created with {len(converted_spec['$defs'])} schemas", file=sys.stderr)
+                if "Memory" in converted_spec["$defs"]:
+                    print("SUCCESS: Memory schema found in $defs", file=sys.stderr)
+                else:
+                    print("ERROR: Memory schema not found in $defs", file=sys.stderr)
+                    print(f"Available schemas: {list(converted_spec['$defs'].keys())[:10]}", file=sys.stderr)
         
         return converted_spec
     
@@ -258,49 +272,49 @@ def init_mcp():
             try:
                 print("Fetching OpenAPI schema...", file=sys.stderr)
                 import requests
-                response = requests.get(f"{server_url}/openapi.yaml")
-                print(f"OpenAPI response status: {response.status_code}", file=sys.stderr)
+                response = requests.get(f"{server_url}/openapi-json-schema.json")
+                print(f"JSON Schema response status: {response.status_code}", file=sys.stderr)
                 if response.status_code == 200:
-                    # Convert YAML to JSON
-                    yaml_content = response.text
-                    print(f"OpenAPI YAML content length: {len(yaml_content)}", file=sys.stderr)
-                    return yaml.safe_load(yaml_content)
+                    # Parse JSON directly
+                    json_content = response.text
+                    print(f"JSON Schema content length: {len(json_content)}", file=sys.stderr)
+                    return json.loads(json_content)
                 else:
-                    logger.error(f"Failed to fetch OpenAPI YAML: {response.status_code}")
-                    print(f"ERROR: Failed to fetch OpenAPI YAML: {response.status_code}", file=sys.stderr)
-                    raise Exception(f"Failed to fetch OpenAPI YAML: {response.status_code}")
+                    logger.error(f"Failed to fetch JSON Schema: {response.status_code}")
+                    print(f"ERROR: Failed to fetch JSON Schema: {response.status_code}", file=sys.stderr)
+                    raise Exception(f"Failed to fetch JSON Schema: {response.status_code}")
             except Exception as e:
-                logger.error(f"Error fetching OpenAPI YAML: {str(e)}")
-                print(f"ERROR: Error fetching OpenAPI YAML: {str(e)}", file=sys.stderr)
+                logger.error(f"Error fetching JSON Schema: {str(e)}")
+                print(f"ERROR: Error fetching JSON Schema: {str(e)}", file=sys.stderr)
                 raise
 
-        # Get OpenAPI schema synchronously
-        print("Getting OpenAPI schema...", file=sys.stderr)
-        openapi_spec = get_openapi_schema_sync()
-        print("OpenAPI schema fetched successfully", file=sys.stderr)
+        # Get JSON Schema synchronously
+        print("Getting JSON Schema...", file=sys.stderr)
+        json_schema = get_openapi_schema_sync()
+        print("JSON Schema fetched successfully", file=sys.stderr)
         
-        # Dump OpenAPI spec to a writable location for debugging/reference
+        # Dump JSON Schema to a writable location for debugging/reference
         try:
             # Try to write to logs directory first
             logs_dir = Path("logs")
             if logs_dir.exists() and os.access(logs_dir, os.W_OK):
-                spec_path = logs_dir / "openapi_spec.json"
+                spec_path = logs_dir / "json_schema.json"
             else:
                 # Fall back to temp directory
-                spec_path = Path(tempfile.gettempdir()) / "openapi_spec.json"
+                spec_path = Path(tempfile.gettempdir()) / "json_schema.json"
             
             with open(spec_path, "w") as f:
-                json.dump(openapi_spec, f, indent=2)
-            logger.info(f"Dumped OpenAPI spec to {spec_path}")
-            print(f"Dumped OpenAPI spec to {spec_path}", file=sys.stderr)
+                json.dump(json_schema, f, indent=2)
+            logger.info(f"Dumped JSON Schema to {spec_path}")
+            print(f"Dumped JSON Schema to {spec_path}", file=sys.stderr)
         except Exception as e:
-            logger.warning(f"Could not dump OpenAPI spec to file: {e}")
-            print(f"Warning: Could not dump OpenAPI spec to file: {e}", file=sys.stderr)
+            logger.warning(f"Could not dump JSON Schema to file: {e}")
+            print(f"Warning: Could not dump JSON Schema to file: {e}", file=sys.stderr)
             # Continue without dumping the file
         
-        # Create MCP instance with OpenAPI spec using CustomFastMCP
+        # Create MCP instance with JSON Schema using CustomFastMCP
         mcp = CustomFastMCP(
-            openapi_spec=openapi_spec,
+            openapi_spec=json_schema,
             client=http_client,
             name="Papr Memory MCP"
         )
