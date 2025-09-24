@@ -170,8 +170,11 @@ class CustomFastMCP(FastMCPOpenAPI):
     def _convert_openapi_to_json_schema(self, openapi_spec: dict[str, Any]) -> dict[str, Any]:
         """
         Convert OpenAPI 3.1 spec to JSON Schema format for MCP compatibility.
-        This adds $defs alongside components.schemas for better compatibility.
+        This properly converts components/schemas to $defs and updates all references.
         """
+        import json
+        import re
+        
         converted_spec = openapi_spec.copy()
         
         # Add $defs alongside components.schemas for MCP compatibility
@@ -179,6 +182,27 @@ class CustomFastMCP(FastMCPOpenAPI):
             converted_spec["$defs"] = converted_spec["components"]["schemas"]
             logger.info("Added $defs alongside components.schemas for MCP compatibility")
             print("Added $defs alongside components.schemas for MCP compatibility", file=sys.stderr)
+            
+            # Convert all references from #/components/schemas/ to #/$defs/
+            def convert_refs(obj):
+                if isinstance(obj, dict):
+                    for key, value in obj.items():
+                        if key == "$ref" and isinstance(value, str):
+                            # Convert OpenAPI references to JSON Schema references
+                            if value.startswith("#/components/schemas/"):
+                                obj[key] = value.replace("#/components/schemas/", "#/$defs/")
+                            elif value.startswith("#/components/"):
+                                obj[key] = value.replace("#/components/", "#/$defs/")
+                        else:
+                            convert_refs(value)
+                elif isinstance(obj, list):
+                    for item in obj:
+                        convert_refs(item)
+            
+            # Convert all references in the spec
+            convert_refs(converted_spec)
+            logger.info("Converted all schema references from OpenAPI to JSON Schema format")
+            print("Converted all schema references from OpenAPI to JSON Schema format", file=sys.stderr)
         
         return converted_spec
     
