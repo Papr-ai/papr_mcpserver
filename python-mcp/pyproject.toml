@@ -1,6 +1,6 @@
 [project]
 name = "papr-memory-mcp"
-version = "0.1.4"
+version = "0.1.5"
 description = "Papr Memory API integration for MCP (Model Context Protocol) servers"
 requires-python = ">=3.10"
 authors = [
