@@ -267,54 +267,63 @@ def init_mcp():
         print(f"HTTP client created successfully", file=sys.stderr)
 
         # Fetch OpenAPI YAML from server and convert to JSON
-        def get_openapi_schema_sync():
-            """Synchronous version of get_openapi_schema"""
+        def get_openapi_json_sync():
+            """Synchronous version of get_openapi_json"""
             try:
                 print("Fetching OpenAPI schema...", file=sys.stderr)
                 import requests
-                response = requests.get(f"{server_url}/openapi-json-schema.json")
-                print(f"JSON Schema response status: {response.status_code}", file=sys.stderr)
+                import time
+                # Add cache-busting parameters to bypass caching
+                cache_buster = int(time.time() * 1000)  # milliseconds timestamp
+                url = f"{server_url}/openapi.json?t={cache_buster}&_cb={cache_buster}"
+                headers = {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                }
+                response = requests.get(url, headers=headers)
+                print(f"OpenAPI JSON response status: {response.status_code}", file=sys.stderr)
                 if response.status_code == 200:
                     # Parse JSON directly
                     json_content = response.text
-                    print(f"JSON Schema content length: {len(json_content)}", file=sys.stderr)
+                    print(f"OpenAPI JSON content length: {len(json_content)}", file=sys.stderr)
                     return json.loads(json_content)
                 else:
-                    logger.error(f"Failed to fetch JSON Schema: {response.status_code}")
-                    print(f"ERROR: Failed to fetch JSON Schema: {response.status_code}", file=sys.stderr)
-                    raise Exception(f"Failed to fetch JSON Schema: {response.status_code}")
+                    logger.error(f"Failed to fetch OpenAPI JSON: {response.status_code}")
+                    print(f"ERROR: Failed to fetch OpenAPI JSON: {response.status_code}", file=sys.stderr)
+                    raise Exception(f"Failed to fetch OpenAPI JSON: {response.status_code}")
             except Exception as e:
-                logger.error(f"Error fetching JSON Schema: {str(e)}")
-                print(f"ERROR: Error fetching JSON Schema: {str(e)}", file=sys.stderr)
+                logger.error(f"Error fetching OpenAPI JSON: {str(e)}")
+                print(f"ERROR: Error fetching OpenAPI JSON: {str(e)}", file=sys.stderr)
                 raise
 
-        # Get JSON Schema synchronously
-        print("Getting JSON Schema...", file=sys.stderr)
-        json_schema = get_openapi_schema_sync()
-        print("JSON Schema fetched successfully", file=sys.stderr)
+        # Get OpenAPI JSON synchronously
+        print("Getting OpenAPI JSON...", file=sys.stderr)
+        openapi_spec = get_openapi_json_sync()
+        print("OpenAPI JSON fetched successfully", file=sys.stderr)
         
-        # Dump JSON Schema to a writable location for debugging/reference
+        # Dump OpenAPI JSON to a writable location for debugging/reference
         try:
             # Try to write to logs directory first
             logs_dir = Path("logs")
             if logs_dir.exists() and os.access(logs_dir, os.W_OK):
-                spec_path = logs_dir / "json_schema.json"
+                spec_path = logs_dir / "openapi.json"
             else:
                 # Fall back to temp directory
-                spec_path = Path(tempfile.gettempdir()) / "json_schema.json"
+                spec_path = Path(tempfile.gettempdir()) / "openapi.json"
             
             with open(spec_path, "w") as f:
-                json.dump(json_schema, f, indent=2)
-            logger.info(f"Dumped JSON Schema to {spec_path}")
-            print(f"Dumped JSON Schema to {spec_path}", file=sys.stderr)
+                json.dump(openapi_spec, f, indent=2)
+            logger.info(f"Dumped OpenAPI JSON to {spec_path}")
+            print(f"Dumped OpenAPI JSON to {spec_path}", file=sys.stderr)
         except Exception as e:
-            logger.warning(f"Could not dump JSON Schema to file: {e}")
-            print(f"Warning: Could not dump JSON Schema to file: {e}", file=sys.stderr)
+            logger.warning(f"Could not dump OpenAPI JSON to file: {e}")
+            print(f"Warning: Could not dump OpenAPI JSON to file: {e}", file=sys.stderr)
             # Continue without dumping the file
         
-        # Create MCP instance with JSON Schema using CustomFastMCP
+        # Create MCP instance with OpenAPI JSON using CustomFastMCP
         mcp = CustomFastMCP(
-            openapi_spec=json_schema,
+            openapi_spec=openapi_spec,
             client=http_client,
             name="Papr Memory MCP"
         )
