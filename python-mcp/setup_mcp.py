@@ -17,8 +17,8 @@ def get_application_config_path(app_name):
         if sys.platform == "win32":
             return Path.home() / ".cursor" / "mcp.json"
         elif sys.platform == "darwin":
-            config_dir = Path.home() / "Library" / "Application Support" / "Cursor" / "mcp"
-            return config_dir / "mcp.json"
+            # Use ~/.cursor/mcp.json for macOS
+            return Path.home() / ".cursor" / "mcp.json"
         else:
             config_dir = Path.home() / ".config" / "cursor" / "mcp"
             return config_dir / "mcp.json"
