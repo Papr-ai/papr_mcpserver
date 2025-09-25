@@ -266,47 +266,46 @@ def set_system_environment_variable(key, value):
 
 def get_api_key():
     """Get API key from user input or environment"""
-    api_key = os.getenv("PAPR_API_KEY")
+    existing_api_key = os.getenv("PAPR_API_KEY")
     saved_to_env = False
     
-    if not api_key:
-        print("🔑 Papr Memory API Key Required")
-        print("   You can get your API key from: https://papr.ai/dashboard")
-        print()
-        
-        while True:
-            api_key = input("Enter your PAPR_API_KEY: ").strip()
-            if api_key:
-                # Ask if user wants to save it to environment
-                print("\n💡 **Environment Variable Recommendation:**")
-                print("   ✅ **Recommended (y)**: Store API key securely in environment variables")
-                print("      - More secure (key not stored in config files)")
-                print("      - Easy to change without editing config")
-                print("      - Follows security best practices")
-                print("   ⚠️  **Alternative (n)**: Embed API key directly in config file")
-                print("      - Less secure but simpler setup")
-                print("      - Key stored in plain text in config file")
-                print()
-                save_env = input("Save to environment variables? (y/n): ").strip().lower()
-                if save_env in ['y', 'yes']:
-                    # Try to set system-wide environment variable
-                    success, message = set_system_environment_variable("PAPR_API_KEY", api_key)
-                    if success:
-                        print(f"✅ {message}")
-                        saved_to_env = True
-                    else:
-                        print(f"⚠️  {message}")
-                        print("   Falling back to session-only environment variable")
-                        os.environ["PAPR_API_KEY"] = api_key
-                        saved_to_env = True
+    print("🔑 Papr Memory API Key Required")
+    print("   You can get your API key from: https://papr.ai/dashboard")
+    if existing_api_key:
+        print(f"   Current API key: {existing_api_key[:8]}...{existing_api_key[-4:] if len(existing_api_key) > 12 else existing_api_key}")
+    print()
+    
+    while True:
+        api_key = input("Enter your PAPR_API_KEY: ").strip()
+        if api_key:
+            # Ask if user wants to save it to environment
+            print("\n💡 **Environment Variable Recommendation:**")
+            print("   ✅ **Recommended (y)**: Store API key securely in environment variables")
+            print("      - More secure (key not stored in config files)")
+            print("      - Easy to change without editing config")
+            print("      - Follows security best practices")
+            print("   ⚠️  **Alternative (n)**: Embed API key directly in config file")
+            print("      - Less secure but simpler setup")
+            print("      - Key stored in plain text in config file")
+            print()
+            save_env = input("Save to environment variables? (y/n): ").strip().lower()
+            if save_env in ['y', 'yes']:
+                # Try to set system-wide environment variable
+                success, message = set_system_environment_variable("PAPR_API_KEY", api_key)
+                if success:
+                    print(f"✅ {message}")
+                    saved_to_env = True
                 else:
-                    print("⚠️  API key not saved to environment variables")
-                    print("   The MCP server will need the API key to be set manually")
-                break
+                    print(f"⚠️  {message}")
+                    print("   Falling back to session-only environment variable")
+                    os.environ["PAPR_API_KEY"] = api_key
+                    saved_to_env = True
             else:
-                print("❌ API key cannot be empty. Please try again.")
-    else:
-        saved_to_env = True  # API key already in environment
+                print("⚠️  API key not saved to environment variables")
+                print("   The MCP server will need the API key to be set manually")
+            break
+        else:
+            print("❌ API key cannot be empty. Please try again.")
     
     return api_key, saved_to_env
 
