@@ -9,7 +9,6 @@ import json
 import sys
 import subprocess
 from pathlib import Path
-import platform
 
 def get_application_config_path(app_name):
     """Get the MCP configuration file path for different applications"""
@@ -126,10 +125,10 @@ def select_application():
         else:
             print("❌ Invalid choice. Please enter 1, 2, or 3.")
 
-def create_mcp_config(app_name, api_key, use_env_var=True):
+def create_mcp_config(app_name, api_key):
     """Create or update MCP configuration for the specified application"""
     if app_name == "other":
-        return create_generic_config(api_key, use_env_var)
+        return create_generic_config(api_key)
     
     config_path = get_application_config_path(app_name)
     
@@ -149,27 +148,15 @@ def create_mcp_config(app_name, api_key, use_env_var=True):
     if "mcpServers" not in existing_config:
         existing_config["mcpServers"] = {}
     
-    # Create clean configuration for PyPI package using uv
-    if use_env_var:
-        # Use environment variable placeholder (recommended)
-        papr_memory_config = {
-            "command": "uv",
-            "args": ["run", "--with", "papr-memory-mcp", "papr-memory-mcp"],
-            "env": {
-                "PAPR_API_KEY": "${PAPR_API_KEY}",
-                "MEMORY_SERVER_URL": "${MEMORY_SERVER_URL:-https://memory.papr.ai}"
-            }
+    # Create configuration with hardcoded API key
+    papr_memory_config = {
+        "command": "uv",
+        "args": ["run", "--with", "papr-memory-mcp", "papr-memory-mcp"],
+        "env": {
+            "PAPR_API_KEY": api_key,
+            "MEMORY_SERVER_URL": "https://memory.papr.ai"
         }
-    else:
-        # Embed API key directly (less secure but works without env vars)
-        papr_memory_config = {
-            "command": "uv",
-            "args": ["run", "--with", "papr-memory-mcp", "papr-memory-mcp"],
-            "env": {
-                "PAPR_API_KEY": api_key,
-                "MEMORY_SERVER_URL": "https://memory.papr.ai"
-            }
-        }
+    }
     
     # Add or update papr-memory configuration (overwrites any existing config)
     existing_config["mcpServers"]["papr-memory"] = papr_memory_config
@@ -184,34 +171,20 @@ def create_mcp_config(app_name, api_key, use_env_var=True):
         print(f"❌ Error writing MCP config: {e}")
         return None
 
-def create_generic_config(api_key, use_env_var=True):
+def create_generic_config(api_key):
     """Create a generic MCP configuration for other applications"""
-    if use_env_var:
-        config = {
-            "mcpServers": {
-                "papr-memory": {
-                    "command": "uv",
-                    "args": ["run", "--with", "papr-memory-mcp", "papr-memory-mcp"],
-                    "env": {
-                        "PAPR_API_KEY": "${PAPR_API_KEY}",
-                        "MEMORY_SERVER_URL": "${MEMORY_SERVER_URL:-https://memory.papr.ai}"
-                    }
+    config = {
+        "mcpServers": {
+            "papr-memory": {
+                "command": "uv",
+                "args": ["run", "--with", "papr-memory-mcp", "papr-memory-mcp"],
+                "env": {
+                    "PAPR_API_KEY": api_key,
+                    "MEMORY_SERVER_URL": "https://memory.papr.ai"
                 }
             }
         }
-    else:
-        config = {
-            "mcpServers": {
-                "papr-memory": {
-                    "command": "uv",
-                    "args": ["run", "--with", "papr-memory-mcp", "papr-memory-mcp"],
-                    "env": {
-                        "PAPR_API_KEY": api_key,
-                        "MEMORY_SERVER_URL": "https://memory.papr.ai"
-                    }
-                }
-            }
-        }
+    }
     
     print("\n📋 **Generic MCP Configuration**")
     print("Copy this JSON configuration to your application's MCP config file:")
@@ -229,85 +202,22 @@ def create_generic_config(api_key, use_env_var=True):
     
     return "generic"
 
-def set_system_environment_variable(key, value):
-    """Set system-wide environment variable"""
-    try:
-        if platform.system() == "Windows":
-            # Use setx command for Windows
-            result = subprocess.run(
-                ["setx", key, value], 
-                capture_output=True, 
-                text=True, 
-                check=True
-            )
-            return True, "System-wide environment variable set successfully"
-        else:
-            # For Unix-like systems, add to shell profile
-            shell_profile = None
-            if os.path.exists(os.path.expanduser("~/.bashrc")):
-                shell_profile = os.path.expanduser("~/.bashrc")
-            elif os.path.exists(os.path.expanduser("~/.zshrc")):
-                shell_profile = os.path.expanduser("~/.zshrc")
-            elif os.path.exists(os.path.expanduser("~/.profile")):
-                shell_profile = os.path.expanduser("~/.profile")
-            
-            if shell_profile:
-                # Add export statement to shell profile
-                export_line = f'export {key}="{value}"\n'
-                with open(shell_profile, 'a') as f:
-                    f.write(f"\n# Papr Memory MCP API Key\n{export_line}")
-                return True, f"Environment variable added to {shell_profile}. Please restart your terminal or run 'source {shell_profile}'"
-            else:
-                return False, "Could not find shell profile file"
-    except subprocess.CalledProcessError as e:
-        return False, f"Failed to set system environment variable: {e}"
-    except Exception as e:
-        return False, f"Error setting system environment variable: {e}"
 
 def get_api_key():
-    """Get API key from user input or environment"""
-    existing_api_key = os.getenv("PAPR_API_KEY")
-    saved_to_env = False
-    
+    """Get API key from user input"""
     print("🔑 Papr Memory API Key Required")
     print("   You can get your API key from: https://papr.ai/dashboard")
-    if existing_api_key:
-        print(f"   Current API key: {existing_api_key[:8]}...{existing_api_key[-4:] if len(existing_api_key) > 12 else existing_api_key}")
     print()
     
     while True:
         api_key = input("Enter your PAPR_API_KEY: ").strip()
         if api_key:
-            # Ask if user wants to save it to environment
-            print("\n💡 **Environment Variable Recommendation:**")
-            print("   ✅ **Recommended (y)**: Store API key securely in environment variables")
-            print("      - More secure (key not stored in config files)")
-            print("      - Easy to change without editing config")
-            print("      - Follows security best practices")
-            print("   ⚠️  **Alternative (n)**: Embed API key directly in config file")
-            print("      - Less secure but simpler setup")
-            print("      - Key stored in plain text in config file")
-            print()
-            save_env = input("Save to environment variables? (y/n): ").strip().lower()
-            if save_env in ['y', 'yes']:
-                # Try to set system-wide environment variable
-                success, message = set_system_environment_variable("PAPR_API_KEY", api_key)
-                if success:
-                    print(f"✅ {message}")
-                    saved_to_env = True
-                else:
-                    print(f"⚠️  {message}")
-                    print("   Falling back to session-only environment variable")
-                    os.environ["PAPR_API_KEY"] = api_key
-                    saved_to_env = True
-            else:
-                print("⚠️  API key not saved to environment variables")
-                print("   The MCP server will need the API key to be set manually")
+            print("✅ API key will be embedded directly in the MCP configuration file")
             break
         else:
             print("❌ API key cannot be empty. Please try again.")
     
-    return api_key, saved_to_env
+    return api_key
 
 def main():
     """Main setup function"""
@@ -342,10 +252,10 @@ def main():
     print("✅ uv found")
     
     # Get API key from user
-    api_key, saved_to_env = get_api_key()
+    api_key = get_api_key()
     
     # Create MCP configuration
-    config_path = create_mcp_config(app_name, api_key, saved_to_env)
+    config_path = create_mcp_config(app_name, api_key)
     if not config_path:
         print("❌ Failed to create MCP configuration")
         return False
@@ -361,18 +271,15 @@ def main():
     print(f"   🔧 Server: papr-memory")
     print(f"   ⚡ Command: uv run --with papr-memory-mcp papr-memory-mcp")
     print(f"   🔑 API Key: {'✅ Set' if api_key else '❌ Not set'}")
-    print(f"   🌍 Environment Variable: {'✅ Saved' if saved_to_env else '❌ Not saved'}")
+    print(f"   📝 Storage: Embedded in config file")
     
     print(f"\n🔧 Next Steps:")
     print(f"1. Restart {app_name.title()}")
     print(f"2. The papr-memory tools will be available in {app_name.title()}")
     print("3. uv will automatically install papr-memory-mcp from PyPI when first used")
     
-    if saved_to_env:
-        print(f"\n💡 The API key is saved in environment variables and will be used by the MCP server.")
-    else:
-        print(f"\n⚠️  The API key is embedded in the config file (less secure but works).")
-        print(f"   For better security, set PAPR_API_KEY environment variable and update the config.")
+    print(f"\n💡 The API key is embedded directly in the MCP configuration file.")
+    print(f"   This ensures the MCP server can access it without environment variable dependencies.")
     
     print("\n🎉 Setup complete!")
     return True
