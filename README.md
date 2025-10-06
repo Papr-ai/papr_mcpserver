@@ -1,6 +1,6 @@
 # Papr MCP Server
 
-A FastAPI-based MCP (Memory Control Protocol) server implementation for integrating with Papr's memory services (https://papr.ai).
+Papr MCP (Memory Control Protocol) server implementation for integrating with Papr's memory services (https://papr.ai).
 
 ## License
 
@@ -68,7 +68,7 @@ fastmcp dev paprmcp.py
 ```
 
 6) Point your client to the server
-- Use the JSON from the README (or run `python setup_mcp.py` and pick "Other") to configure your client's `mcp.json`.
+- Use the JSON from the README (or run `python setup_mcp.py` and pick "Other") to configure your client’s `mcp.json`.
 
 ## Start Server Directly
 
@@ -128,6 +128,50 @@ The setup script creates two main configuration files:
      - Claude: `~/.config/claude/claude_desktop_config.json`
      - Cursor: `./cursor/mcp.json`
 
+## Testing
+
+The project includes a comprehensive test suite that validates all MCP server functionality:
+
+### Running Tests
+
+**Quick Test (Recommended):**
+```bash
+python run_tests.py
+```
+
+**Direct Test Execution:**
+```bash
+python tests/test_mcp_comprehensive.py
+```
+
+**Using pytest (if installed):**
+```bash
+pytest tests/ -v
+```
+
+### Test Coverage
+
+The comprehensive test validates:
+- ✅ **Server Startup**: MCP server initialization and tool registration
+- ✅ **MCP Protocol**: Real client-server communication via MCP protocol
+- ✅ **CRUD Operations**: Complete Create, Read, Update, Delete workflow
+- ✅ **API Integration**: Papr Memory API connectivity and responses
+- ✅ **Error Handling**: Parameter validation and error propagation
+- ✅ **Tool Availability**: All 8 tools properly registered and callable
+
+### Test Structure
+
+```
+tests/
+├── test_mcp_comprehensive.py  # Main comprehensive test
+└── TESTING.md                 # Detailed testing documentation
+```
+
+The test suite merges multiple testing approaches:
+- **CI/CD Testing**: Internal validation and error handling
+- **MCP Protocol Testing**: Real client-server communication
+- **Server Validation**: Command-line and import testing
+
 ## Development
 
 The project uses `pyproject.toml` for dependency management with the following extras:
@@ -156,7 +200,7 @@ winget install OpenJS.NodeJS
 $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
 
 # Also ensure uv is properly installed and in PATH:
-$env:PATH = "C:\Users\$env:USERNAME\.local\bin;$env:PATH"
+$env:PATH = "C:\\Users\\$env:USERNAME\\.local\\bin;$env:PATH"
 
 # On macOS (using Homebrew)
 brew install node
