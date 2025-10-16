@@ -91,10 +91,40 @@ class CustomFastMCP(FastMCP):
         # Register the 8 explicit memory tools
         self._register_memory_tools()
         
+        # Register health endpoint
+        self._register_health_endpoint()
+        
         logger.info("CustomFastMCP initialized with explicit memory tools")
         print("CustomFastMCP initialized with explicit memory tools", file=sys.stderr)
         logger.info(f"Registered tools: {list(self._tool_manager._tools.keys())}")
         print(f"Registered tools: {list(self._tool_manager._tools.keys())}", file=sys.stderr)
+    
+    def _register_health_endpoint(self):
+        """Register health check endpoint"""
+        from fastapi import FastAPI
+        from fastapi.responses import JSONResponse
+        
+        # Get the underlying FastAPI app
+        app = self._app if hasattr(self, '_app') else None
+        if app is None:
+            # Try to get the app from the server
+            if hasattr(self, '_server') and hasattr(self._server, 'app'):
+                app = self._server.app
+            else:
+                logger.warning("Could not find FastAPI app for health endpoint")
+                return
+        
+        @app.get("/mcp/health")
+        async def health_check():
+            """Health check endpoint for the MCP server"""
+            return JSONResponse({
+                "status": "healthy",
+                "server": "Papr Memory MCP",
+                "tools": list(self._tool_manager._tools.keys()),
+                "version": "1.0.0"
+            })
+        
+        logger.info("Health endpoint registered at /mcp/health")
     
     def _register_memory_tools(self):
         """Register the 8 explicit memory tools using the papr-memory SDK"""
