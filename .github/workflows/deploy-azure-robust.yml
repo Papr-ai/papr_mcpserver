@@ -85,7 +85,7 @@ jobs:
           if az webapp config set \
             --name ${{ env.AZURE_WEBAPP_NAME }} \
             --resource-group memory \
-            --startup-file "fastmcp run papr_memory_mcp/core.py:init_mcp --transport http --host 0.0.0.0 --port 8000"; then
+            --startup-file "fastmcp run papr_memory_mcp.core:init_mcp --transport http --host 0.0.0.0 --port 8000"; then
             echo "Startup command set"
             break
           fi
@@ -122,4 +122,4 @@ jobs:
     - name: Show hostname + settings
       run: |
         echo "Image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}"
-        echo "Startup: fastmc
+        echo "Startup: fastmcp run papr_memory_mcp.core:init_mcp --transport http --host 0.0.0.0 --port 8000"
