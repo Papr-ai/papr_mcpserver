@@ -101,30 +101,48 @@ class CustomFastMCP(FastMCP):
     
     def _register_health_endpoint(self):
         """Register health check endpoint"""
-        from fastapi import FastAPI
-        from fastapi.responses import JSONResponse
-        
-        # Get the underlying FastAPI app
-        app = self._app if hasattr(self, '_app') else None
-        if app is None:
-            # Try to get the app from the server
-            if hasattr(self, '_server') and hasattr(self._server, 'app'):
+        try:
+            from fastapi import FastAPI
+            from fastapi.responses import JSONResponse
+            
+            # Try different ways to get the FastAPI app
+            app = None
+            
+            # Method 1: Check if we have direct access to app
+            if hasattr(self, '_app') and self._app:
+                app = self._app
+            # Method 2: Check server attribute
+            elif hasattr(self, '_server') and hasattr(self._server, 'app'):
                 app = self._server.app
-            else:
+            # Method 3: Check if we can get it from the transport
+            elif hasattr(self, '_transport') and hasattr(self._transport, 'app'):
+                app = self._transport.app
+            # Method 4: Try to get from the underlying server
+            elif hasattr(self, 'server') and hasattr(self.server, 'app'):
+                app = self.server.app
+            
+            if app is None:
+                # Debug: Print available attributes
                 logger.warning("Could not find FastAPI app for health endpoint")
+                logger.warning(f"Available attributes: {dir(self)}")
+                print(f"Available attributes: {dir(self)}", file=sys.stderr)
                 return
-        
-        @app.get("/mcp/health")
-        async def health_check():
-            """Health check endpoint for the MCP server"""
-            return JSONResponse({
-                "status": "healthy",
-                "server": "Papr Memory MCP",
-                "tools": list(self._tool_manager._tools.keys()),
-                "version": "1.0.0"
-            })
-        
-        logger.info("Health endpoint registered at /mcp/health")
+            
+            @app.get("/mcp/health")
+            async def health_check():
+                """Health check endpoint for the MCP server"""
+                return JSONResponse({
+                    "status": "healthy",
+                    "server": "Papr Memory MCP",
+                    "tools": list(self._tool_manager._tools.keys()),
+                    "version": "1.0.0"
+                })
+            
+            logger.info("Health endpoint registered at /mcp/health")
+            
+        except Exception as e:
+            logger.error(f"Failed to register health endpoint: {e}")
+            print(f"Failed to register health endpoint: {e}", file=sys.stderr)
     
     def _register_memory_tools(self):
         """Register the 8 explicit memory tools using the papr-memory SDK"""
