@@ -91,13 +91,13 @@ class CustomFastMCP(FastMCP):
         # Register the 8 explicit memory tools
         self._register_memory_tools()
         
-        # Register health endpoint
-        self._register_health_endpoint()
-        
         logger.info("CustomFastMCP initialized with explicit memory tools")
         print("CustomFastMCP initialized with explicit memory tools", file=sys.stderr)
         logger.info(f"Registered tools: {list(self._tool_manager._tools.keys())}")
         print(f"Registered tools: {list(self._tool_manager._tools.keys())}", file=sys.stderr)
+        
+        # Register health endpoint after initialization
+        self._register_health_endpoint()
     
     def _register_health_endpoint(self):
         """Register health check endpoint"""
@@ -108,18 +108,21 @@ class CustomFastMCP(FastMCP):
             # Try different ways to get the FastAPI app
             app = None
             
-            # Method 1: Check if we have direct access to app
-            if hasattr(self, '_app') and self._app:
+            # Method 1: Check streamable_http_app (most likely)
+            if hasattr(self, 'streamable_http_app') and self.streamable_http_app:
+                app = self.streamable_http_app
+            # Method 2: Check http_app
+            elif hasattr(self, 'http_app') and self.http_app:
+                app = self.http_app
+            # Method 3: Check sse_app
+            elif hasattr(self, 'sse_app') and self.sse_app:
+                app = self.sse_app
+            # Method 4: Check if we have direct access to app
+            elif hasattr(self, '_app') and self._app:
                 app = self._app
-            # Method 2: Check server attribute
+            # Method 5: Check server attribute
             elif hasattr(self, '_server') and hasattr(self._server, 'app'):
                 app = self._server.app
-            # Method 3: Check if we can get it from the transport
-            elif hasattr(self, '_transport') and hasattr(self._transport, 'app'):
-                app = self._transport.app
-            # Method 4: Try to get from the underlying server
-            elif hasattr(self, 'server') and hasattr(self.server, 'app'):
-                app = self.server.app
             
             if app is None:
                 # Debug: Print available attributes
