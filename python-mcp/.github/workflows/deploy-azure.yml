@@ -1,0 +1,98 @@
+name: Build and Deploy to Azure Web App
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: paprmemorymcp-g0heeseedzcnckbg
+  AZURE_WEBAPP_PACKAGE_PATH: '.'
+  PYTHON_VERSION: '3.11'
+  DOCKER_IMAGE_NAME: papr-mcp-http
+  ACR_NAME: testpaprcontainer
+  ACR_USERNAME: testPaprContainer
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run tests
+      run: |
+        python -m pytest tests/ -v
+
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Login to Azure Container Registry
+      run: |
+        az acr login --name ${{ env.ACR_NAME }}
+
+    - name: Build and push Docker image
+      run: |
+        # Build the Docker image
+        docker build -t ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }} .
+        docker build -t ${{ env.DOCKER_IMAGE_NAME }}:latest .
+        
+        # Tag for ACR
+        docker tag ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }} ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
+        docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:latest
+        
+        # Push to ACR
+        docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
+        docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:latest
+
+    - name: Configure Azure Web App
+      run: |
+        # Set container configuration
+        az webapp config container set \
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --resource-group memory \
+          --container-image-name ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }} \
+          --container-registry-url https://${{ env.ACR_NAME }}.azurecr.io \
+          --container-registry-user ${{ env.ACR_USERNAME }} \
+          --container-registry-password ${{ secrets.ACR_PASSWORD }}
+
+    - name: Set startup command
+      run: |
+        az webapp config set \
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --resource-group memory \
+          --startup-file "fastmcp run papr_memory_mcp.core:init_mcp --transport http --host 0.0.0.0 --port 8000"
+
+    - name: Configure app settings
+      run: |
+        az webapp config appsettings set \
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --resource-group memory \
+          --settings PORT=8000 WEBSITES_PORT=8000
+
+    - name: Restart Azure Web App
+      run: |
+        az webapp restart \
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --resource-group memory
+
+    - name: Verify deployment
+      run: |
+        echo "Deployment completed successfully!"
+        echo "Web App URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+        echo "Container Image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}"

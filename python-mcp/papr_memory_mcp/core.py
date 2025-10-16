@@ -70,15 +70,18 @@ else:
     logger.warning("No API key found in environment variables!")
     print("WARNING: No API key found in environment variables!", file=sys.stderr)
 
-# Initialize Papr Memory SDK client
-try:
-    papr_client = Papr(x_api_key=api_key)
-    logger.info("Papr Memory SDK client initialized")
-    print("Papr Memory SDK client initialized", file=sys.stderr)
-except Exception as e:
-    logger.error(f"Failed to initialize Papr Memory SDK: {str(e)}")
-    print(f"ERROR: Failed to initialize Papr Memory SDK: {str(e)}", file=sys.stderr)
-    raise
+# Do not initialize a global Papr client; create per-call with provided api_key
+
+def _get_effective_api_key(passed_api_key: Optional[str]) -> str:
+    """Return the api key passed to the tool or fall back to env var.
+    Raises a clear error if neither is provided.
+    """
+    if passed_api_key and passed_api_key.strip():
+        return passed_api_key
+    env_key = os.getenv("PAPR_API_KEY")
+    if env_key and env_key.strip():
+        return env_key
+    raise ValueError("API key is required. Pass 'api_key' or set PAPR_API_KEY in environment.")
 
 class CustomFastMCP(FastMCP):
     def __init__(self, name: str = "Papr Memory MCP", **settings):
@@ -99,6 +102,7 @@ class CustomFastMCP(FastMCP):
         @self.tool()
         async def add_memory(
             content: str,
+            api_key: Optional[str] = None,
             type: str = "text",
             metadata: Optional[Dict[str, Any]] = None,
             context: Optional[List[Dict[str, str]]] = None,
@@ -136,7 +140,9 @@ class CustomFastMCP(FastMCP):
                 if relationships_json:
                     memory_data["relationships_json"] = relationships_json
                 
-                # Add memory using SDK
+                # Use per-call Papr client with provided or env API key
+                effective_key = _get_effective_api_key(api_key)
+                papr_client = Papr(x_api_key=effective_key)
                 result = papr_client.memory.add(**memory_data)
                 
                 logger.info(f"Memory added successfully: {result}")
@@ -149,7 +155,7 @@ class CustomFastMCP(FastMCP):
                 raise
         
         @self.tool()
-        async def get_memory(memory_id: str) -> Dict[str, Any]:
+        async def get_memory(memory_id: str, api_key: Optional[str] = None) -> Dict[str, Any]:
             """
             Retrieve a memory item by ID.
             
@@ -163,6 +169,8 @@ class CustomFastMCP(FastMCP):
                 logger.info(f"Getting memory: {memory_id}")
                 print(f"Getting memory: {memory_id}", file=sys.stderr)
                 
+                effective_key = _get_effective_api_key(api_key)
+                papr_client = Papr(x_api_key=effective_key)
                 result = papr_client.memory.get(memory_id)
                 
                 logger.info(f"Memory retrieved successfully: {result}")
@@ -177,6 +185,7 @@ class CustomFastMCP(FastMCP):
         @self.tool()
         async def update_memory(
             memory_id: str,
+            api_key: Optional[str] = None,
             content: Optional[str] = None,
             type: Optional[str] = None,
             metadata: Optional[Dict[str, Any]] = None,
@@ -214,7 +223,8 @@ class CustomFastMCP(FastMCP):
                 if relationships_json is not None:
                     update_data["relationships_json"] = relationships_json
                 
-                # Update memory using SDK
+                effective_key = _get_effective_api_key(api_key)
+                papr_client = Papr(x_api_key=effective_key)
                 result = papr_client.memory.update(memory_id, **update_data)
                 
                 logger.info(f"Memory updated successfully: {result}")
@@ -227,7 +237,7 @@ class CustomFastMCP(FastMCP):
                 raise
         
         @self.tool()
-        async def delete_memory(memory_id: str, skip_parse: bool = False) -> Dict[str, Any]:
+        async def delete_memory(memory_id: str, api_key: Optional[str] = None, skip_parse: bool = False) -> Dict[str, Any]:
             """
             Delete a memory item by ID.
             
@@ -242,6 +252,8 @@ class CustomFastMCP(FastMCP):
                 logger.info(f"Deleting memory: {memory_id}")
                 print(f"Deleting memory: {memory_id}", file=sys.stderr)
                 
+                effective_key = _get_effective_api_key(api_key)
+                papr_client = Papr(x_api_key=effective_key)
                 result = papr_client.memory.delete(memory_id, skip_parse=skip_parse)
                 
                 logger.info(f"Memory deleted successfully: {result}")
@@ -256,6 +268,7 @@ class CustomFastMCP(FastMCP):
         @self.tool()
         async def search_memory(
             query: str,
+            api_key: Optional[str] = None,
             max_memories: int = 20,
             max_nodes: int = 15,
             rank_results: bool = False,
@@ -300,7 +313,8 @@ class CustomFastMCP(FastMCP):
                 if metadata:
                     search_params["metadata"] = metadata
                 
-                # Search memories using SDK
+                effective_key = _get_effective_api_key(api_key)
+                papr_client = Papr(x_api_key=effective_key)
                 result = papr_client.memory.search(**search_params)
                 
                 logger.info(f"Memory search completed successfully")
@@ -316,6 +330,7 @@ class CustomFastMCP(FastMCP):
         async def submit_feedback(
             search_id: str,
             feedback_type: str,
+            api_key: Optional[str] = None,
             feedback_source: str = "inline",
             feedback_text: Optional[str] = None,
             feedback_score: Optional[float] = None,
@@ -372,7 +387,8 @@ class CustomFastMCP(FastMCP):
                 if feedback_impact:
                     feedback_data["feedbackImpact"] = feedback_impact
                 
-                # Submit feedback using SDK
+                effective_key = _get_effective_api_key(api_key)
+                papr_client = Papr(x_api_key=effective_key)
                 result = papr_client.feedback.submit(
                     search_id=search_id,
                     feedback_data=feedback_data,
@@ -392,6 +408,7 @@ class CustomFastMCP(FastMCP):
         @self.tool()
         async def submit_batch_feedback(
             feedback_items: List[Dict[str, Any]],
+            api_key: Optional[str] = None,
             session_context: Optional[Dict[str, Any]] = None
         ) -> Dict[str, Any]:
             """
@@ -408,7 +425,8 @@ class CustomFastMCP(FastMCP):
                 logger.info(f"Submitting batch feedback: {len(feedback_items)} items")
                 print(f"Submitting batch feedback: {len(feedback_items)} items", file=sys.stderr)
                 
-                # Submit batch feedback using SDK
+                effective_key = _get_effective_api_key(api_key)
+                papr_client = Papr(x_api_key=effective_key)
                 result = papr_client.feedback.submit_batch(
                     feedback_items=feedback_items,
                     session_context=session_context
@@ -426,6 +444,7 @@ class CustomFastMCP(FastMCP):
         @self.tool()
         async def add_memory_batch(
             memories: List[Dict[str, Any]],
+            api_key: Optional[str] = None,
             user_id: Optional[str] = None,
             external_user_id: Optional[str] = None,
             batch_size: int = 10,
@@ -468,7 +487,8 @@ class CustomFastMCP(FastMCP):
                 if webhook_secret:
                     batch_params["webhook_secret"] = webhook_secret
                 
-                # Add memory batch using SDK
+                effective_key = _get_effective_api_key(api_key)
+                papr_client = Papr(x_api_key=effective_key)
                 result = papr_client.memory.add_batch(**batch_params)
                 
                 logger.info(f"Memory batch added successfully: {result}")
