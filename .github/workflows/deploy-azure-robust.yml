@@ -60,6 +60,12 @@ jobs:
         docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
         docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:latest
 
+    - name: Trigger SCM webhook for automatic deployment
+      run: |
+        curl -X POST "https://${{ env.AZURE_WEBAPP_NAME }}:1dehG7uunQCYSr40lhrFZTrnglikjNsAQ1rokd4NsxAxfcG1pPq9LyEs7xrF@${{ env.AZURE_WEBAPP_NAME }}-g0heeseedzcnckbg.scm.westus-01.azurewebsites.net/api/registry/webhook" \
+          -H "Content-Type: application/json" \
+          -d '{"tag": "latest"}'
+
     - name: Configure container on Web App (retry)
       run: |
         for i in {1..3}; do
