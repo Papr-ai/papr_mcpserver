@@ -98,6 +98,9 @@ class CustomFastMCP(FastMCP):
         
         # Register health endpoint after initialization
         self._register_health_endpoint()
+        
+        # Register Bearer token middleware for hosted MCP
+        self._register_bearer_token_middleware()
     
     def _register_health_endpoint(self):
         """Register health check endpoint"""
@@ -146,6 +149,48 @@ class CustomFastMCP(FastMCP):
         except Exception as e:
             logger.error(f"Failed to register health endpoint: {e}")
             print(f"Failed to register health endpoint: {e}", file=sys.stderr)
+    
+    def _register_bearer_token_middleware(self):
+        """Register middleware to extract Bearer token from Authorization header"""
+        try:
+            from fastapi import Request, Response
+            from starlette.middleware.base import BaseHTTPMiddleware
+            import os
+            
+            class BearerTokenMiddleware(BaseHTTPMiddleware):
+                async def dispatch(self, request: Request, call_next):
+                    # Extract Bearer token from Authorization header
+                    auth_header = request.headers.get("Authorization", "")
+                    if auth_header.startswith("Bearer "):
+                        token = auth_header[7:]  # Remove "Bearer " prefix
+                        # Set as environment variable for this request
+                        os.environ["PAPR_API_KEY"] = token
+                        logger.info(f"Bearer token extracted and set as PAPR_API_KEY")
+                        print(f"Bearer token extracted and set as PAPR_API_KEY", file=sys.stderr)
+                    
+                    response = await call_next(request)
+                    return response
+            
+            # Try to get the FastAPI app and add middleware
+            app = None
+            if hasattr(self, 'streamable_http_app') and self.streamable_http_app:
+                app = self.streamable_http_app
+            elif hasattr(self, 'http_app') and self.http_app:
+                app = self.http_app
+            elif hasattr(self, 'sse_app') and self.sse_app:
+                app = self.sse_app
+            
+            if app:
+                app.add_middleware(BearerTokenMiddleware)
+                logger.info("Bearer token middleware registered")
+                print("Bearer token middleware registered", file=sys.stderr)
+            else:
+                logger.warning("Could not find FastAPI app for Bearer token middleware")
+                print("Could not find FastAPI app for Bearer token middleware", file=sys.stderr)
+                
+        except Exception as e:
+            logger.error(f"Failed to register Bearer token middleware: {e}")
+            print(f"Failed to register Bearer token middleware: {e}", file=sys.stderr)
     
     def _register_memory_tools(self):
         """Register the 8 explicit memory tools using the papr-memory SDK"""
