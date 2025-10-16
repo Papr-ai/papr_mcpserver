@@ -144,6 +144,16 @@ class CustomFastMCP(FastMCP):
                     "version": "1.0.0"
                 })
             
+            @app.get("/mcp/debug")
+            async def debug_endpoint():
+                """Debug endpoint to test middleware and environment"""
+                return JSONResponse({
+                    "status": "debug",
+                    "papr_api_key_set": bool(os.getenv("PAPR_API_KEY")),
+                    "papr_api_key_preview": os.getenv("PAPR_API_KEY", "NOT_SET")[:8] + "..." if os.getenv("PAPR_API_KEY") else "NOT_SET",
+                    "environment_keys": list(os.environ.keys())
+                })
+            
             logger.info("Health endpoint registered at /mcp/health")
             
         except Exception as e:
@@ -159,14 +169,24 @@ class CustomFastMCP(FastMCP):
             
             class BearerTokenMiddleware(BaseHTTPMiddleware):
                 async def dispatch(self, request: Request, call_next):
+                    # Log all headers for debugging
+                    logger.info(f"Request headers: {dict(request.headers)}")
+                    print(f"Request headers: {dict(request.headers)}", file=sys.stderr)
+                    
                     # Extract Bearer token from Authorization header
                     auth_header = request.headers.get("Authorization", "")
+                    logger.info(f"Authorization header: {auth_header}")
+                    print(f"Authorization header: {auth_header}", file=sys.stderr)
+                    
                     if auth_header.startswith("Bearer "):
                         token = auth_header[7:]  # Remove "Bearer " prefix
                         # Set as environment variable for this request
                         os.environ["PAPR_API_KEY"] = token
-                        logger.info(f"Bearer token extracted and set as PAPR_API_KEY")
-                        print(f"Bearer token extracted and set as PAPR_API_KEY", file=sys.stderr)
+                        logger.info(f"Bearer token extracted and set as PAPR_API_KEY: {token[:8]}...{token[-4:] if len(token) > 12 else '***'}")
+                        print(f"Bearer token extracted and set as PAPR_API_KEY: {token[:8]}...{token[-4:] if len(token) > 12 else '***'}", file=sys.stderr)
+                    else:
+                        logger.warning(f"No Bearer token found in Authorization header: {auth_header}")
+                        print(f"No Bearer token found in Authorization header: {auth_header}", file=sys.stderr)
                     
                     response = await call_next(request)
                     return response
