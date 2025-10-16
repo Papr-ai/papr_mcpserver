@@ -18,7 +18,7 @@ env:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -28,7 +28,7 @@ jobs:
       with:
         python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Install dependencies
+    - name: Install deps (CI)
       run: |
         cd python-mcp
         python -m pip install --upgrade pip
@@ -37,113 +37,89 @@ jobs:
     - name: Run tests
       run: |
         cd python-mcp
-        python -m pytest tests/ -v || echo "Tests failed, but continuing with deployment"
+        python -m pytest tests/ -v || echo "Tests failed, continuing to deploy"
 
-    - name: Login to Azure
+    - name: Azure login
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Login to Azure Container Registry
+    - name: ACR login
       run: |
         echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ env.ACR_NAME }}.azurecr.io -u ${{ env.ACR_USERNAME }} --password-stdin
 
-    - name: Build and push Docker image
+    - name: Build & push image
       run: |
         cd python-mcp
-        # Build the Docker image
+        # Build
         docker build -t ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }} .
-        docker build -t ${{ env.DOCKER_IMAGE_NAME }}:latest .
-        
-        # Tag for ACR
-        docker tag ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }} ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
-        docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:latest
-        
-        # Push to ACR
+        docker tag  ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }} ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
+        # (optional latest)
+        docker tag  ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }} ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:latest
+        # Push
         docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
         docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:latest
 
-    - name: Wait for Azure CLI to be ready
+    - name: Configure container on Web App (retry)
       run: |
-        echo "Waiting for Azure CLI to be ready..."
-        sleep 10
-
-    - name: Configure Azure Web App (with retry)
-      run: |
-        # Retry logic for Azure CLI commands
         for i in {1..3}; do
-          echo "Attempt $i: Configuring Azure Web App..."
+          echo "Attempt $i: Configure container image..."
           if az webapp config container set \
             --name ${{ env.AZURE_WEBAPP_NAME }} \
             --resource-group memory \
             --container-image-name ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }} \
             --container-registry-url https://${{ env.ACR_NAME }}.azurecr.io \
             --container-registry-user ${{ env.ACR_USERNAME }} \
-            --container-registry-password ${{ secrets.ACR_PASSWORD }}; then
-            echo "Container configuration successful!"
+            --container-registry-password "${{ secrets.ACR_PASSWORD }}"; then
+            echo "Container configuration OK"
             break
-          else
-            echo "Attempt $i failed, retrying..."
-            sleep 10
           fi
+          sleep 10
         done
 
-    - name: Set startup command (with retry)
+    # IMPORTANT: file path + entry func, not module path
+    - name: Set startup command (retry)
       run: |
         for i in {1..3}; do
-          echo "Attempt $i: Setting startup command..."
+          echo "Attempt $i: Set startup command..."
           if az webapp config set \
             --name ${{ env.AZURE_WEBAPP_NAME }} \
             --resource-group memory \
-            --startup-file "fastmcp run papr_memory_mcp.core:init_mcp --transport http --host 0.0.0.0 --port 8000"; then
-            echo "Startup command set successfully!"
+            --startup-file "fastmcp run papr_memory_mcp/core.py:init_mcp --transport http --host 0.0.0.0 --port 8000"; then
+            echo "Startup command set"
             break
-          else
-            echo "Attempt $i failed, retrying..."
-            sleep 10
           fi
+          sleep 10
         done
 
-    - name: Configure app settings (with retry)
+    # Route external 443 → container:8000
+    - name: Configure app settings (retry)
       run: |
         for i in {1..3}; do
-          echo "Attempt $i: Setting app settings..."
+          echo "Attempt $i: Set app settings..."
           if az webapp config appsettings set \
             --name ${{ env.AZURE_WEBAPP_NAME }} \
             --resource-group memory \
-            --settings PORT=8000 WEBSITES_PORT=8000; then
-            echo "App settings configured successfully!"
+            --settings WEBSITES_PORT=8000 WEBSITES_CONTAINER_START_TIME_LIMIT=180; then
+            echo "App settings OK"
             break
-          else
-            echo "Attempt $i failed, retrying..."
-            sleep 10
           fi
+          sleep 10
         done
 
-    - name: Restart Azure Web App (with retry)
+    # (Optional) Enable container logs to diagnose boots
+    - name: Enable logs
       run: |
-        for i in {1..3}; do
-          echo "Attempt $i: Restarting web app..."
-          if az webapp restart \
-            --name ${{ env.AZURE_WEBAPP_NAME }} \
-            --resource-group memory; then
-            echo "Web app restarted successfully!"
-            break
-          else
-            echo "Attempt $i failed, retrying..."
-            sleep 10
-          fi
-        done
+        az webapp log config \
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --resource-group memory \
+          --docker-container-logging filesystem
 
-    - name: Verify deployment
+    - name: Restart app
       run: |
-        echo "Deployment completed successfully!"
-        echo "Web App URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
-        echo "Container Image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}"
-        echo "Startup Command: fastmcp run papr_memory_mcp.core:init_mcp --transport http --host 0.0.0.0 --port 8000"
+        az webapp restart --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group memory
 
-    - name: Health check
+    - name: Show hostname + settings
       run: |
-        echo "Waiting for web app to be ready..."
-        sleep 30
-        curl -f https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net || echo "Health check failed, but deployment may still be successful"
+        echo "Image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}"
+        echo "Startup: fastmc
