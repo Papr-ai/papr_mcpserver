@@ -111,15 +111,27 @@ class CustomFastMCP(FastMCP):
             # Try different ways to get the FastAPI app
             app = None
             
-            # Method 1: Check streamable_http_app (most likely)
-            if hasattr(self, 'streamable_http_app') and self.streamable_http_app:
-                app = self.streamable_http_app
-            # Method 2: Check http_app
-            elif hasattr(self, 'http_app') and self.http_app:
-                app = self.http_app
-            # Method 3: Check sse_app
-            elif hasattr(self, 'sse_app') and self.sse_app:
-                app = self.sse_app
+            # Method 1: Call http_app function (preferred in newer versions)
+            if hasattr(self, 'http_app'):
+                try:
+                    app = self.http_app()
+                    logger.info("Got FastAPI app from http_app()")
+                except Exception as e:
+                    logger.warning(f"Failed to call http_app(): {e}")
+            # Method 2: Call streamable_http_app function (fallback)
+            elif hasattr(self, 'streamable_http_app'):
+                try:
+                    app = self.streamable_http_app()
+                    logger.info("Got FastAPI app from streamable_http_app()")
+                except Exception as e:
+                    logger.warning(f"Failed to call streamable_http_app(): {e}")
+            # Method 3: Call sse_app function
+            elif hasattr(self, 'sse_app'):
+                try:
+                    app = self.sse_app()
+                    logger.info("Got FastAPI app from sse_app()")
+                except Exception as e:
+                    logger.warning(f"Failed to call sse_app(): {e}")
             # Method 4: Check if we have direct access to app
             elif hasattr(self, '_app') and self._app:
                 app = self._app
@@ -134,27 +146,62 @@ class CustomFastMCP(FastMCP):
                 print(f"Available attributes: {dir(self)}", file=sys.stderr)
                 return
             
-            @app.get("/mcp/health")
-            async def health_check():
-                """Health check endpoint for the MCP server"""
-                return JSONResponse({
-                    "status": "healthy",
-                    "server": "Papr Memory MCP",
-                    "tools": list(self._tool_manager._tools.keys()),
-                    "version": "1.0.0"
-                })
-            
-            @app.get("/mcp/debug")
-            async def debug_endpoint():
-                """Debug endpoint to test middleware and environment"""
-                return JSONResponse({
-                    "status": "debug",
-                    "papr_api_key_set": bool(os.getenv("PAPR_API_KEY")),
-                    "papr_api_key_preview": os.getenv("PAPR_API_KEY", "NOT_SET")[:8] + "..." if os.getenv("PAPR_API_KEY") else "NOT_SET",
-                    "environment_keys": list(os.environ.keys())
-                })
-            
-            logger.info("Health endpoint registered at /mcp/health")
+            # Try to register health endpoints using different methods
+            try:
+                # Method 1: Try using add_route if available
+                if hasattr(app, 'add_route'):
+                    async def health_check():
+                        """Health check endpoint for the MCP server"""
+                        return JSONResponse({
+                            "status": "healthy",
+                            "server": "Papr Memory MCP",
+                            "tools": list(self._tool_manager._tools.keys()),
+                            "version": "1.0.0"
+                        })
+                    
+                    async def debug_endpoint():
+                        """Debug endpoint to test middleware and environment"""
+                        return JSONResponse({
+                            "status": "debug",
+                            "papr_api_key_set": bool(os.getenv("PAPR_API_KEY")),
+                            "papr_api_key_preview": os.getenv("PAPR_API_KEY", "NOT_SET")[:8] + "..." if os.getenv("PAPR_API_KEY") else "NOT_SET",
+                            "environment_keys": list(os.environ.keys())
+                        })
+                    
+                    app.add_route("/mcp/health", health_check, methods=["GET"])
+                    app.add_route("/mcp/debug", debug_endpoint, methods=["GET"])
+                    logger.info("Health endpoints registered via add_route")
+                    print("Health endpoints registered via add_route", file=sys.stderr)
+                # Method 2: Try using get decorator if available
+                elif hasattr(app, 'get') and callable(getattr(app, 'get')):
+                    @app.get("/mcp/health")
+                    async def health_check():
+                        """Health check endpoint for the MCP server"""
+                        return JSONResponse({
+                            "status": "healthy",
+                            "server": "Papr Memory MCP",
+                            "tools": list(self._tool_manager._tools.keys()),
+                            "version": "1.0.0"
+                        })
+                    
+                    @app.get("/mcp/debug")
+                    async def debug_endpoint():
+                        """Debug endpoint to test middleware and environment"""
+                        return JSONResponse({
+                            "status": "debug",
+                            "papr_api_key_set": bool(os.getenv("PAPR_API_KEY")),
+                            "papr_api_key_preview": os.getenv("PAPR_API_KEY", "NOT_SET")[:8] + "..." if os.getenv("PAPR_API_KEY") else "NOT_SET",
+                            "environment_keys": list(os.environ.keys())
+                        })
+                    
+                    logger.info("Health endpoints registered via decorator")
+                    print("Health endpoints registered via decorator", file=sys.stderr)
+                else:
+                    logger.warning(f"App object doesn't support route registration. Type: {type(app)}")
+                    print(f"App object doesn't support route registration. Type: {type(app)}", file=sys.stderr)
+            except Exception as e:
+                logger.error(f"Failed to register health endpoints: {e}")
+                print(f"Failed to register health endpoints: {e}", file=sys.stderr)
             
         except Exception as e:
             logger.error(f"Failed to register health endpoint: {e}")
@@ -193,12 +240,24 @@ class CustomFastMCP(FastMCP):
             
             # Try to get the FastAPI app and add middleware
             app = None
-            if hasattr(self, 'streamable_http_app') and self.streamable_http_app:
-                app = self.streamable_http_app
-            elif hasattr(self, 'http_app') and self.http_app:
-                app = self.http_app
-            elif hasattr(self, 'sse_app') and self.sse_app:
-                app = self.sse_app
+            if hasattr(self, 'http_app'):
+                try:
+                    app = self.http_app()
+                    logger.info("Got FastAPI app for middleware from http_app()")
+                except Exception as e:
+                    logger.warning(f"Failed to call http_app() for middleware: {e}")
+            elif hasattr(self, 'streamable_http_app'):
+                try:
+                    app = self.streamable_http_app()
+                    logger.info("Got FastAPI app for middleware from streamable_http_app()")
+                except Exception as e:
+                    logger.warning(f"Failed to call streamable_http_app() for middleware: {e}")
+            elif hasattr(self, 'sse_app'):
+                try:
+                    app = self.sse_app()
+                    logger.info("Got FastAPI app for middleware from sse_app()")
+                except Exception as e:
+                    logger.warning(f"Failed to call sse_app() for middleware: {e}")
             
             if app:
                 app.add_middleware(BearerTokenMiddleware)
@@ -268,7 +327,12 @@ class CustomFastMCP(FastMCP):
             except Exception as e:
                 logger.error(f"Error adding memory: {str(e)}")
                 print(f"ERROR adding memory: {str(e)}", file=sys.stderr)
-                raise
+                # Return a structured error response instead of raising
+                return {
+                    "error": True,
+                    "message": f"Failed to add memory: {str(e)}",
+                    "details": str(e)
+                }
         
         @self.tool()
         async def get_memory(memory_id: str, api_key: Optional[str] = None) -> Dict[str, Any]:
@@ -621,8 +685,8 @@ def init_mcp():
     try:
         print("Initializing MCP server with explicit tools...", file=sys.stderr)
         
-        # Create MCP instance with explicit tools
-        mcp = CustomFastMCP(name="Papr Memory MCP")
+        # Create MCP instance with explicit tools and stateless configuration
+        mcp = CustomFastMCP(name="Papr Memory MCP", stateless_http=True, json_response=True)
         
         # Log the tools that were registered
         logger.info(f"Initialized MCP with tools: {list(mcp._tool_manager._tools.keys())}")
@@ -667,8 +731,8 @@ def main():
         logger.info("About to call mcp.run()...")
         print("About to call mcp.run()...", file=sys.stderr)
         
-        # Use FastMCP's run method
-        mcp.run()
+        # Use FastMCP's run method with standard HTTP transport
+        mcp.run(transport="http", host="0.0.0.0", port=8000)
         print("MCP server finished running", file=sys.stderr)
         logger.info("MCP server finished running")
     except KeyboardInterrupt:

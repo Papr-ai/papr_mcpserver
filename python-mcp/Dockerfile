@@ -24,10 +24,12 @@ RUN pip install --no-cache-dir .
 RUN useradd -m runner && chown -R runner:runner /app
 USER runner
 
-# Azure may set PORT or WEBSITE_PORT; default 8080
-ENV PORT=${PORT}
-ENV WEBSITE_PORT=${WEBSITE_PORT}
+# Expose the port the app runs on
+EXPOSE 8000
+
+# Azure may set PORT or WEBSITE_PORT; default 8000
+ENV PORT=8000
 
 # Serve MCP over HTTP
 # IMPORTANT: pass a FILE path (not a module path) to fastmcp run
-CMD sh -c 'fastmcp run papr_memory_mcp/core.py:init_mcp --transport http --host 0.0.0.0 --port "${PORT:-${WEBSITE_PORT:-8080}}"'
+CMD sh -c 'fastmcp run papr_memory_mcp/core.py:init_mcp --transport http --host 0.0.0.0 --port "${PORT:-8000}"'
