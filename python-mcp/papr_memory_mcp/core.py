@@ -21,6 +21,10 @@ import json
 import logging
 import traceback
 import sys
+from contextvars import ContextVar
+
+# Context variable to store API key per request
+request_api_key: ContextVar[str | None] = ContextVar('request_api_key', default=None)
 
 # Import papr-memory SDK
 try:
@@ -73,20 +77,61 @@ else:
 # Do not initialize a global Papr client; create per-call with provided api_key
 
 def _get_effective_api_key(passed_api_key: Optional[str]) -> str:
-    """Return the api key passed to the tool or fall back to env var.
+    """Return the api key passed to the tool or fall back to context var or env var.
     Raises a clear error if neither is provided.
+    
+    Priority:
+    1. Explicitly passed api_key parameter
+    2. Request-scoped context variable (from Bearer token)
+    3. Environment variable PAPR_API_KEY
     """
     if passed_api_key and passed_api_key.strip():
         return passed_api_key
+    
+    # Check request-scoped context variable (set by middleware from Bearer token)
+    ctx_key = request_api_key.get()
+    if ctx_key and ctx_key.strip():
+        return ctx_key
+    
+    # Fall back to environment variable
     env_key = os.getenv("PAPR_API_KEY")
     if env_key and env_key.strip():
         return env_key
+    
     raise ValueError("API key is required. Pass 'api_key' or set PAPR_API_KEY in environment.")
 
+def install_bearer_middleware(app):
+    """Install Bearer token middleware using FastAPI's decorator approach"""
+    from fastapi import Request
+    
+    @app.middleware("http")
+    async def bearer_token_middleware(request: Request, call_next):
+        auth = request.headers.get("authorization", "")
+        if auth.startswith("Bearer "):
+            request_api_key.set(auth[7:])
+            print(f"[MW] Bearer OK on {request.url.path}", file=sys.stderr)
+        else:
+            request_api_key.set(None)
+            print(f"[MW] No Bearer on {request.url.path}", file=sys.stderr)
+        return await call_next(request)
+
+def _ensure_mw(app):
+    """Ensure middleware is installed on app (guard against multiple installations)"""
+    if app and not getattr(app, "_papr_mw_installed", False):
+        install_bearer_middleware(app)
+        app._papr_mw_installed = True
+        print(f"[MW] Middleware installed on app id={id(app)}", file=sys.stderr)
+    return app
+
 class CustomFastMCP(FastMCP):
-    def __init__(self, name: str = "Papr Memory MCP", **settings):
+    def __init__(self, **settings):
+        """Initialize CustomFastMCP with Bearer token middleware support"""
+        # Keep stateless_http=True for stateless operation on /mcp
+        settings.setdefault("stateless_http", True)
+        settings.setdefault("json_response", True)
+        
         print("Initializing CustomFastMCP with explicit tools...", file=sys.stderr)
-        super().__init__(name=name, **settings)
+        super().__init__(name="Papr Memory MCP", **settings)
         
         # Register the 8 explicit memory tools
         self._register_memory_tools()
@@ -99,11 +144,32 @@ class CustomFastMCP(FastMCP):
         # Register health endpoint after initialization
         self._register_health_endpoint()
         
-        # Register Bearer token middleware for hosted MCP
-        self._register_bearer_token_middleware()
-        
         # Add robust error handling for connection issues
         self._setup_robust_error_handling()
+    
+    # FastMCP 2.x exposes these factories; override each to ensure middleware
+    def http_app(self, *args, **kwargs):
+        """Override http_app to ensure middleware is installed"""
+        app = super().http_app(*args, **kwargs)
+        return _ensure_mw(app)
+    
+    def streamable_http_app(self, *args, **kwargs):
+        """Override streamable_http_app to ensure middleware is installed"""
+        try:
+            app = super().streamable_http_app(*args, **kwargs)
+            return _ensure_mw(app)
+        except AttributeError:
+            # Method might not exist in all FastMCP versions
+            return None
+    
+    def sse_app(self, *args, **kwargs):
+        """Override sse_app to ensure middleware is installed"""
+        try:
+            app = super().sse_app(*args, **kwargs)
+            return _ensure_mw(app)
+        except AttributeError:
+            # Method might not exist in all FastMCP versions
+            return None
     
     def _setup_robust_error_handling(self):
         """Setup robust error handling for connection issues"""
@@ -268,69 +334,6 @@ class CustomFastMCP(FastMCP):
             logger.error(f"Failed to register health endpoint: {e}")
             print(f"Failed to register health endpoint: {e}", file=sys.stderr)
     
-    def _register_bearer_token_middleware(self):
-        """Register middleware to extract Bearer token from Authorization header"""
-        try:
-            from fastapi import Request, Response
-            from starlette.middleware.base import BaseHTTPMiddleware
-            import os
-            
-            class BearerTokenMiddleware(BaseHTTPMiddleware):
-                async def dispatch(self, request: Request, call_next):
-                    # Log all headers for debugging
-                    logger.info(f"Request headers: {dict(request.headers)}")
-                    print(f"Request headers: {dict(request.headers)}", file=sys.stderr)
-                    
-                    # Extract Bearer token from Authorization header
-                    auth_header = request.headers.get("Authorization", "")
-                    logger.info(f"Authorization header: {auth_header}")
-                    print(f"Authorization header: {auth_header}", file=sys.stderr)
-                    
-                    if auth_header.startswith("Bearer "):
-                        token = auth_header[7:]  # Remove "Bearer " prefix
-                        # Set as environment variable for this request
-                        os.environ["PAPR_API_KEY"] = token
-                        logger.info(f"Bearer token extracted and set as PAPR_API_KEY: {token[:8]}...{token[-4:] if len(token) > 12 else '***'}")
-                        print(f"Bearer token extracted and set as PAPR_API_KEY: {token[:8]}...{token[-4:] if len(token) > 12 else '***'}", file=sys.stderr)
-                    else:
-                        logger.warning(f"No Bearer token found in Authorization header: {auth_header}")
-                        print(f"No Bearer token found in Authorization header: {auth_header}", file=sys.stderr)
-                    
-                    response = await call_next(request)
-                    return response
-            
-            # Try to get the FastAPI app and add middleware
-            app = None
-            if hasattr(self, 'http_app'):
-                try:
-                    app = self.http_app()
-                    logger.info("Got FastAPI app for middleware from http_app()")
-                except Exception as e:
-                    logger.warning(f"Failed to call http_app() for middleware: {e}")
-            elif hasattr(self, 'streamable_http_app'):
-                try:
-                    app = self.streamable_http_app()
-                    logger.info("Got FastAPI app for middleware from streamable_http_app()")
-                except Exception as e:
-                    logger.warning(f"Failed to call streamable_http_app() for middleware: {e}")
-            elif hasattr(self, 'sse_app'):
-                try:
-                    app = self.sse_app()
-                    logger.info("Got FastAPI app for middleware from sse_app()")
-                except Exception as e:
-                    logger.warning(f"Failed to call sse_app() for middleware: {e}")
-            
-            if app:
-                app.add_middleware(BearerTokenMiddleware)
-                logger.info("Bearer token middleware registered")
-                print("Bearer token middleware registered", file=sys.stderr)
-            else:
-                logger.warning("Could not find FastAPI app for Bearer token middleware")
-                print("Could not find FastAPI app for Bearer token middleware", file=sys.stderr)
-                
-        except Exception as e:
-            logger.error(f"Failed to register Bearer token middleware: {e}")
-            print(f"Failed to register Bearer token middleware: {e}", file=sys.stderr)
     
     def _register_memory_tools(self):
         """Register the 8 explicit memory tools using the papr-memory SDK"""
@@ -747,7 +750,8 @@ def init_mcp():
         print("Initializing MCP server with explicit tools...", file=sys.stderr)
         
         # Create MCP instance with explicit tools and stateless configuration
-        mcp = CustomFastMCP(name="Papr Memory MCP", stateless_http=True, json_response=True)
+        # Middleware is installed automatically via app factory overrides
+        mcp = CustomFastMCP()
         
         # Log the tools that were registered
         logger.info(f"Initialized MCP with tools: {list(mcp._tool_manager._tools.keys())}")
