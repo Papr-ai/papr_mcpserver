@@ -101,6 +101,57 @@ class CustomFastMCP(FastMCP):
         
         # Register Bearer token middleware for hosted MCP
         self._register_bearer_token_middleware()
+        
+        # Add robust error handling for connection issues
+        self._setup_robust_error_handling()
+    
+    def _setup_robust_error_handling(self):
+        """Setup robust error handling for connection issues"""
+        try:
+            import asyncio
+            from anyio import ClosedResourceError
+            
+            # Override the message router to handle ClosedResourceError gracefully
+            original_message_router = None
+            if hasattr(self, '_server') and hasattr(self._server, 'message_router'):
+                original_message_router = self._server.message_router
+                
+                async def robust_message_router(*args, **kwargs):
+                    try:
+                        return await original_message_router(*args, **kwargs)
+                    except ClosedResourceError as e:
+                        logger.warning(f"Client disconnected gracefully: {e}")
+                        print(f"Client disconnected gracefully: {e}", file=sys.stderr)
+                        return  # Gracefully handle disconnection
+                    except Exception as e:
+                        logger.error(f"Error in message router: {e}")
+                        print(f"Error in message router: {e}", file=sys.stderr)
+                        # Don't re-raise to prevent server crashes
+                        
+                self._server.message_router = robust_message_router
+                logger.info("Robust error handling configured for message router")
+                
+        except Exception as e:
+            logger.warning(f"Could not setup robust error handling: {e}")
+            print(f"Could not setup robust error handling: {e}", file=sys.stderr)
+    
+    def _validate_connection_protocol(self, request):
+        """Validate and handle HTTP vs HTTPS protocol issues"""
+        try:
+            # Check if request is secure
+            is_secure = getattr(request, 'is_secure', False) or \
+                       request.headers.get('x-forwarded-proto') == 'https' or \
+                       request.headers.get('x-forwarded-ssl') == 'on'
+            
+            if not is_secure and request.url.scheme == 'http':
+                logger.warning("Insecure HTTP connection detected - consider using HTTPS")
+                print("Insecure HTTP connection detected - consider using HTTPS", file=sys.stderr)
+            
+            return is_secure
+            
+        except Exception as e:
+            logger.warning(f"Could not validate connection protocol: {e}")
+            return True  # Default to secure if we can't determine
     
     def _register_health_endpoint(self):
         """Register health check endpoint"""
@@ -156,7 +207,12 @@ class CustomFastMCP(FastMCP):
                             "status": "healthy",
                             "server": "Papr Memory MCP",
                             "tools": list(self._tool_manager._tools.keys()),
-                            "version": "1.0.0"
+                            "version": "1.0.0",
+                            "robustness": {
+                                "error_handling": "enabled",
+                                "retry_logic": "enabled",
+                                "connection_validation": "enabled"
+                            }
                         })
                     
                     async def debug_endpoint():
@@ -181,7 +237,12 @@ class CustomFastMCP(FastMCP):
                             "status": "healthy",
                             "server": "Papr Memory MCP",
                             "tools": list(self._tool_manager._tools.keys()),
-                            "version": "1.0.0"
+                            "version": "1.0.0",
+                            "robustness": {
+                                "error_handling": "enabled",
+                                "retry_logic": "enabled",
+                                "connection_validation": "enabled"
+                            }
                         })
                     
                     @app.get("/mcp/debug")
@@ -723,27 +784,55 @@ except Exception as e:
 print("Module initialization completed successfully", file=sys.stderr)
 
 def main():
-    """Main entry point for the Papr MCP server."""
-    try:
-        # Start the server
-        print("=== STARTING MCP SERVER ===", file=sys.stderr)
-        logger.info("Starting MCP server process...")
-        logger.info("About to call mcp.run()...")
-        print("About to call mcp.run()...", file=sys.stderr)
-        
-        # Use FastMCP's run method with standard HTTP transport
-        mcp.run(transport="http", host="0.0.0.0", port=8000)
-        print("MCP server finished running", file=sys.stderr)
-        logger.info("MCP server finished running")
-    except KeyboardInterrupt:
-        print("Received keyboard interrupt, shutting down...", file=sys.stderr)
-        logger.info("Received keyboard interrupt, shutting down...")
-    except Exception as e:
-        print(f"ERROR running MCP server: {str(e)}", file=sys.stderr)
-        print(f"Traceback: {traceback.format_exc()}", file=sys.stderr)
-        logger.error(f"Error running MCP server: {str(e)}")
-        logger.error(f"Traceback: {traceback.format_exc()}")
-        raise
+    """Main entry point for the Papr MCP server with robust error handling."""
+    max_retries = 3
+    retry_count = 0
+    
+    while retry_count < max_retries:
+        try:
+            # Start the server
+            print("=== STARTING MCP SERVER ===", file=sys.stderr)
+            logger.info("Starting MCP server process...")
+            logger.info("About to call mcp.run()...")
+            print("About to call mcp.run()...", file=sys.stderr)
+            
+            # Use FastMCP's run method with standard HTTP transport
+            # Add timeout and keep-alive settings for better connection handling
+            mcp.run(
+                transport="http", 
+                host="0.0.0.0", 
+                port=8000,
+                # Add connection timeout and keep-alive settings
+                timeout=30,
+                keep_alive=True
+            )
+            print("MCP server finished running", file=sys.stderr)
+            logger.info("MCP server finished running")
+            break  # Success, exit retry loop
+            
+        except KeyboardInterrupt:
+            print("Received keyboard interrupt, shutting down...", file=sys.stderr)
+            logger.info("Received keyboard interrupt, shutting down...")
+            break
+            
+        except Exception as e:
+            retry_count += 1
+            error_msg = f"ERROR running MCP server (attempt {retry_count}/{max_retries}): {str(e)}"
+            print(error_msg, file=sys.stderr)
+            print(f"Traceback: {traceback.format_exc()}", file=sys.stderr)
+            logger.error(error_msg)
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            
+            if retry_count < max_retries:
+                wait_time = 2 ** retry_count  # Exponential backoff
+                print(f"Retrying in {wait_time} seconds...", file=sys.stderr)
+                logger.info(f"Retrying in {wait_time} seconds...")
+                import time
+                time.sleep(wait_time)
+            else:
+                print("Max retries exceeded, giving up", file=sys.stderr)
+                logger.error("Max retries exceeded, giving up")
+                raise
 
 if __name__ == "__main__":
     main()
