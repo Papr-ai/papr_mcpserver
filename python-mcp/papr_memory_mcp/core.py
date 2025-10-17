@@ -128,7 +128,8 @@ class CustomFastMCP(FastMCP):
         """Initialize CustomFastMCP with Bearer token middleware support"""
         # Keep stateless_http=True for stateless operation on /mcp
         settings.setdefault("stateless_http", True)
-        settings.setdefault("json_response", True)
+        # Do NOT set json_response - let FastMCP support both JSON-RPC and SSE transports
+        # based on the Accept header from the client
         
         print("Initializing CustomFastMCP with explicit tools...", file=sys.stderr)
         super().__init__(name="Papr Memory MCP", **settings)
@@ -826,11 +827,14 @@ def main():
             else:
                 # Use HTTP transport for Docker/Azure deployment
                 print("Starting HTTP transport...", file=sys.stderr)
+                # Get port from environment (Azure sets PORT or WEBSITES_PORT)
+                port = int(os.getenv("PORT", os.getenv("WEBSITES_PORT", "8000")))
+                print(f"Using port: {port}", file=sys.stderr)
                 # Add timeout and keep-alive settings for better connection handling
                 mcp.run(
                     transport="http", 
                     host="0.0.0.0", 
-                    port=8000,
+                    port=port,
                     # Add connection timeout and keep-alive settings
                     timeout=30,
                     keep_alive=True
