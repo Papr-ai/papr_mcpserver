@@ -9,6 +9,12 @@ import sys
 import os
 from pathlib import Path
 
+# Fix Windows encoding issues with emojis
+if sys.platform == 'win32':
+    import codecs
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+    sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
+
 # Add current directory to path
 sys.path.insert(0, str(Path(__file__).parent))
 

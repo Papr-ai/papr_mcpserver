@@ -788,6 +788,24 @@ def main():
     max_retries = 3
     retry_count = 0
     
+    # Detect transport mode from environment or stdin/stdout
+    # If running in a pipe/stdio context (like from MCP client), use stdio
+    # Otherwise, use HTTP for Docker/Azure deployment
+    transport_mode = os.getenv("MCP_TRANSPORT", "auto")
+    
+    # Auto-detect: if stdin is a terminal, use HTTP; if piped, use stdio
+    if transport_mode == "auto":
+        import sys
+        if sys.stdin.isatty():
+            transport_mode = "http"
+            print("Auto-detected HTTP transport (terminal mode)", file=sys.stderr)
+        else:
+            transport_mode = "stdio"
+            print("Auto-detected stdio transport (pipe mode)", file=sys.stderr)
+    
+    logger.info(f"Using transport mode: {transport_mode}")
+    print(f"Using transport mode: {transport_mode}", file=sys.stderr)
+    
     while retry_count < max_retries:
         try:
             # Start the server
@@ -796,16 +814,24 @@ def main():
             logger.info("About to call mcp.run()...")
             print("About to call mcp.run()...", file=sys.stderr)
             
-            # Use FastMCP's run method with standard HTTP transport
-            # Add timeout and keep-alive settings for better connection handling
-            mcp.run(
-                transport="http", 
-                host="0.0.0.0", 
-                port=8000,
-                # Add connection timeout and keep-alive settings
-                timeout=30,
-                keep_alive=True
-            )
+            # Use appropriate transport based on detection
+            if transport_mode == "stdio":
+                # Use stdio transport for MCP client testing
+                print("Starting stdio transport...", file=sys.stderr)
+                mcp.run(transport="stdio")
+            else:
+                # Use HTTP transport for Docker/Azure deployment
+                print("Starting HTTP transport...", file=sys.stderr)
+                # Add timeout and keep-alive settings for better connection handling
+                mcp.run(
+                    transport="http", 
+                    host="0.0.0.0", 
+                    port=8000,
+                    # Add connection timeout and keep-alive settings
+                    timeout=30,
+                    keep_alive=True
+                )
+            
             print("MCP server finished running", file=sys.stderr)
             logger.info("MCP server finished running")
             break  # Success, exit retry loop
