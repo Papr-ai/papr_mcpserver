@@ -29,7 +29,8 @@ EXPOSE 8000
 
 # Azure may set PORT or WEBSITE_PORT; default 8000
 ENV PORT=8000
+ENV MCP_TRANSPORT=http
 
 # Serve MCP over HTTP
 # Run the main() function which respects path="/" setting in core.py
-CMD ["python", "-m", "papr_memory_mcp.core"]
+CMD ["python", "-m", "papr_memory_mcp"]

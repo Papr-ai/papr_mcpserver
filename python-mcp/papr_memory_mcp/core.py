@@ -800,7 +800,6 @@ def main():
     
     # Auto-detect: if stdin is a terminal, use HTTP; if piped, use stdio
     if transport_mode == "auto":
-        import sys
         if sys.stdin.isatty():
             transport_mode = "http"
             print("Auto-detected HTTP transport (terminal mode)", file=sys.stderr)
@@ -830,15 +829,11 @@ def main():
                 # Get port from environment (Azure sets PORT or WEBSITES_PORT)
                 port = int(os.getenv("PORT", os.getenv("WEBSITES_PORT", "8000")))
                 print(f"Using port: {port}", file=sys.stderr)
-                # Add timeout and keep-alive settings for better connection handling
                 mcp.run(
                     transport="http", 
                     host="0.0.0.0", 
                     port=port,
-                    path="/",  # Serve MCP at root instead of /mcp
-                    # Add connection timeout and keep-alive settings
-                    timeout=30,
-                    keep_alive=True
+                    path="/"  # Serve MCP at root instead of /mcp
                 )
             
             print("MCP server finished running", file=sys.stderr)
