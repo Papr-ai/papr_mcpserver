@@ -31,5 +31,5 @@ EXPOSE 8000
 ENV PORT=8000
 
 # Serve MCP over HTTP
-# IMPORTANT: pass a FILE path (not a module path) to fastmcp run
-CMD sh -c 'fastmcp run papr_memory_mcp/core.py:init_mcp --transport http --host 0.0.0.0 --port "${PORT:-8000}"'
+# Run the main() function which respects path="/" setting in core.py
+CMD ["python", "-m", "papr_memory_mcp.core"]
