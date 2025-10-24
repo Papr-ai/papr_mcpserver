@@ -291,13 +291,13 @@ class CustomFastMCP(FastMCP):
                             "environment_keys": list(os.environ.keys())
                         })
                     
-                    app.add_route("/mcp/health", health_check, methods=["GET"])
-                    app.add_route("/mcp/debug", debug_endpoint, methods=["GET"])
+                    app.add_route("/health", health_check, methods=["GET"])
+                    app.add_route("/debug", debug_endpoint, methods=["GET"])
                     logger.info("Health endpoints registered via add_route")
                     print("Health endpoints registered via add_route", file=sys.stderr)
                 # Method 2: Try using get decorator if available
                 elif hasattr(app, 'get') and callable(getattr(app, 'get')):
-                    @app.get("/mcp/health")
+                    @app.get("/health")
                     async def health_check():
                         """Health check endpoint for the MCP server"""
                         return JSONResponse({
@@ -312,7 +312,7 @@ class CustomFastMCP(FastMCP):
                             }
                         })
                     
-                    @app.get("/mcp/debug")
+                    @app.get("/debug")
                     async def debug_endpoint():
                         """Debug endpoint to test middleware and environment"""
                         return JSONResponse({
@@ -835,6 +835,7 @@ def main():
                     transport="http", 
                     host="0.0.0.0", 
                     port=port,
+                    path="/",  # Serve MCP at root instead of /mcp
                     # Add connection timeout and keep-alive settings
                     timeout=30,
                     keep_alive=True
