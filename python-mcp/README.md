@@ -67,8 +67,55 @@ uv run python paprmcp.py
 fastmcp dev paprmcp.py
 ```
 
-6) Point your client to the server
-- Use the JSON from the README (or run `python setup_mcp.py` and pick "Other") to configure your client’s `mcp.json`.
+## Docker (Run Anywhere)
+
+Build the image:
+
+```bash
+docker build -t papr-mcp:latest .
+```
+
+Run the MCP server (stdio) with your API key:
+
+```bash
+docker run --rm -e PAPR_API_KEY=your_api_key_here papr-mcp:latest
+```
+
+This runs `python paprmcp.py` inside the container. MCP clients that use stdio can be configured to launch this image or you can deploy it to a container platform.
+
+### Azure App Service (Linux) using Docker
+
+1. Push your image to a registry (ACR or Docker Hub).
+2. Create an Azure Web App for Containers and select your image.
+3. Configure App Settings:
+   - `PAPR_API_KEY` = your_api_key_here
+4. Startup command: leave default (image CMD runs `python paprmcp.py`).
+
+If you need an HTTP interface with header auth for third parties, use the provided `webapp.py` with Uvicorn instead of `paprmcp.py` and set `PAPR_API_KEY` in App Settings.
+
+## MCP over HTTP (FastMCP Transport)
+
+You can serve the MCP over HTTP using FastMCP (useful for container hosting where clients support MCP-over-HTTP):
+
+- The included `Dockerfile` already runs:
+
+```bash
+fastmcp run papr_memory_mcp.core:init_mcp --transport http --host 0.0.0.0 --port $PORT
+```
+
+Expose `PORT` (default 8000). This does not itself handle header-based auth.
+
+## API Key Behavior (Dual Mode)
+
+To support both local MCP stdio and hosted MCP-over-HTTP:
+
+- Each MCP tool now accepts an optional `api_key` parameter.
+- If `api_key` is provided, the call uses that key: `Papr(x_api_key=api_key)`.
+- If `api_key` is omitted, the server falls back to the `PAPR_API_KEY` environment variable.
+
+This allows:
+- Local development: omit `api_key` and rely on `PAPR_API_KEY`.
+- Hosted usage: pass `api_key` explicitly in each MCP tool call.
 
 ## Start Server Directly
 

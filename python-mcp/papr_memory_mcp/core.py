@@ -126,8 +126,8 @@ def _ensure_mw(app):
 class CustomFastMCP(FastMCP):
     def __init__(self, **settings):
         """Initialize CustomFastMCP with Bearer token middleware support"""
-        # Keep stateless_http=True for stateless operation on /mcp
-        settings.setdefault("stateless_http", True)
+        # Enable stateful HTTP for better session persistence and reconnection resilience
+        settings.setdefault("stateless_http", False)
         # Do NOT set json_response - let FastMCP support both JSON-RPC and SSE transports
         # based on the Accept header from the client
         
@@ -275,12 +275,18 @@ class CustomFastMCP(FastMCP):
                             "server": "Papr Memory MCP",
                             "tools": list(self._tool_manager._tools.keys()),
                             "version": "1.0.0",
+                            "session_mode": "stateful",
                             "robustness": {
                                 "error_handling": "enabled",
                                 "retry_logic": "enabled",
-                                "connection_validation": "enabled"
+                                "connection_validation": "enabled",
+                                "session_persistence": "enabled"
                             }
                         })
+                    
+                    async def ping_endpoint():
+                        """Simple ping endpoint for keep-alive checks"""
+                        return JSONResponse({"status": "ok", "timestamp": __import__('time').time()})
                     
                     async def debug_endpoint():
                         """Debug endpoint to test middleware and environment"""
@@ -292,9 +298,10 @@ class CustomFastMCP(FastMCP):
                         })
                     
                     app.add_route("/health", health_check, methods=["GET"])
+                    app.add_route("/ping", ping_endpoint, methods=["GET"])
                     app.add_route("/debug", debug_endpoint, methods=["GET"])
-                    logger.info("Health endpoints registered via add_route")
-                    print("Health endpoints registered via add_route", file=sys.stderr)
+                    logger.info("Health and ping endpoints registered via add_route")
+                    print("Health and ping endpoints registered via add_route", file=sys.stderr)
                 # Method 2: Try using get decorator if available
                 elif hasattr(app, 'get') and callable(getattr(app, 'get')):
                     @app.get("/health")
@@ -305,12 +312,19 @@ class CustomFastMCP(FastMCP):
                             "server": "Papr Memory MCP",
                             "tools": list(self._tool_manager._tools.keys()),
                             "version": "1.0.0",
+                            "session_mode": "stateful",
                             "robustness": {
                                 "error_handling": "enabled",
                                 "retry_logic": "enabled",
-                                "connection_validation": "enabled"
+                                "connection_validation": "enabled",
+                                "session_persistence": "enabled"
                             }
                         })
+                    
+                    @app.get("/ping")
+                    async def ping_endpoint():
+                        """Simple ping endpoint for keep-alive checks"""
+                        return JSONResponse({"status": "ok", "timestamp": __import__('time').time()})
                     
                     @app.get("/debug")
                     async def debug_endpoint():
@@ -322,8 +336,8 @@ class CustomFastMCP(FastMCP):
                             "environment_keys": list(os.environ.keys())
                         })
                     
-                    logger.info("Health endpoints registered via decorator")
-                    print("Health endpoints registered via decorator", file=sys.stderr)
+                    logger.info("Health and ping endpoints registered via decorator")
+                    print("Health and ping endpoints registered via decorator", file=sys.stderr)
                 else:
                     logger.warning(f"App object doesn't support route registration. Type: {type(app)}")
                     print(f"App object doesn't support route registration. Type: {type(app)}", file=sys.stderr)
