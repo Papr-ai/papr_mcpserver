@@ -131,48 +131,26 @@ jobs:
         run: |
           docker buildx imagetools inspect "${FULL_IMAGE}"
 
-      - name: Check GCP Service Account Permissions
+      - name: GCP Service Account permissions (info)
         if: github.event_name != 'pull_request' && (github.event.inputs.skip_push != true || github.event_name == 'workflow_dispatch')
         run: |
-          echo "=== Checking Service Account Permissions ==="
-          echo ""
-          
-          SA_EMAIL=$(gcloud auth list --filter=status:ACTIVE --format="value(account)" | head -1)
-          
-          if [ -z "${SA_EMAIL}" ]; then
-            echo "⚠️ Could not determine service account email"
-            echo "Make sure GCP_SA_KEY secret contains valid service account credentials"
-            exit 0
+          echo "=== Service Account (for reference) ==="
+          SA_EMAIL=$(gcloud auth list --filter=status:ACTIVE --format="value(account)" 2>/dev/null | head -1)
+          if [ -n "${SA_EMAIL}" ]; then
+            echo "Service Account: ${SA_EMAIL}"
           fi
-          
-          echo "Service Account: ${SA_EMAIL}"
           echo "Project: ${{ env.GCP_PROJECT_ID }}"
           echo ""
-          
-          echo "Checking IAM permissions..."
-          gcloud projects get-iam-policy ${{ env.GCP_PROJECT_ID }} \
-            --flatten="bindings[].members" \
-            --filter="bindings.members:${SA_EMAIL}" \
-            --format="table(bindings.role)" || echo "⚠️ Could not check permissions"
-          
+          echo "=== Required roles for this workflow ==="
+          echo "1. Artifact Registry Writer (roles/artifactregistry.writer) – to push images"
+          echo "2. Cloud Run Admin (roles/run.admin) + Service Account User (roles/iam.serviceAccountUser) – if deploying to Cloud Run"
           echo ""
-          echo "=== Required Permissions ==="
-          echo "The service account needs these roles:"
-          echo "1. Artifact Registry Writer (roles/artifactregistry.writer)"
-          echo "   - To push Docker images to Artifact Registry"
-          echo ""
-          echo "2. Service Account User (roles/iam.serviceAccountUser) - Optional"
-          echo "   - If deploying to Cloud Run"
-          echo ""
-          echo "=== How to Grant Permissions ==="
-          echo "1. Go to: https://console.cloud.google.com/iam-admin/iam?project=${{ env.GCP_PROJECT_ID }}"
-          echo "2. Find service account: ${SA_EMAIL}"
-          echo "3. Click 'Edit' and add the required roles"
-          echo ""
-          echo "Or use gcloud CLI:"
+          echo "=== How to grant (run as a project owner) ==="
           echo "gcloud projects add-iam-policy-binding ${{ env.GCP_PROJECT_ID }} \\"
-          echo "  --member='serviceAccount:${SA_EMAIL}' \\"
+          echo "  --member='serviceAccount:YOUR_SA_EMAIL' \\"
           echo "  --role='roles/artifactregistry.writer'"
+          echo ""
+          echo "For Cloud Run deploy, also add: roles/run.admin, roles/iam.serviceAccountUser"
           echo "==================="
 
       - name: Select Cloud Run service and traffic
