@@ -157,11 +157,12 @@ jobs:
           (github.ref_name == 'main' || github.ref_name == 'development') &&
           (github.event.inputs.skip_push != true || github.event_name != 'workflow_dispatch')
         run: |
-          SERVICE_NAME="mcpserver"
           if [ "${{ github.ref_name }}" = "main" ]; then
+            SERVICE_NAME="mcpserver-staging"
             ENV_SUFFIX="staging"
             echo "Service: ${SERVICE_NAME} (main) - Traffic: 0% until manually routed"
           elif [ "${{ github.ref_name }}" = "development" ]; then
+            SERVICE_NAME="mcpserver-development"
             ENV_SUFFIX="development"
             echo "Service: ${SERVICE_NAME} (development) - Traffic: 100%"
           else
@@ -203,9 +204,17 @@ jobs:
             --platform=managed \
             --execution-environment=gen2"
           
+          # --no-traffic is only valid when updating an existing service (not when creating)
           if [ "${{ env.ENV_SUFFIX }}" = "staging" ]; then
-            DEPLOY_CMD="${DEPLOY_CMD} --no-traffic"
-            echo "⚠️ Staging deployment: Setting traffic to 0% (no traffic to new revision)"
+            if gcloud run services describe ${SERVICE_NAME} \
+              --region=${{ env.GCP_REGION }} \
+              --project=${{ env.GCP_PROJECT_ID }} \
+              --format='value(name)' &>/dev/null; then
+              DEPLOY_CMD="${DEPLOY_CMD} --no-traffic"
+              echo "⚠️ Staging deployment: Setting traffic to 0% (no traffic to new revision)"
+            else
+              echo "Service ${SERVICE_NAME} does not exist yet; deploying with 100% traffic (first deploy). Later main pushes will use 0%."
+            fi
           fi
           
           DEPLOY_CMD="${DEPLOY_CMD} --quiet"
