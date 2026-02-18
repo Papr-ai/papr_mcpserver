@@ -38,7 +38,7 @@ env:
   ARTIFACT_REGISTRY_REPO: webapp-images
   REGISTRY: us-west1-docker.pkg.dev
   IMAGE_NAME: papr-mcp-http
-  DOCKER_CONTEXT: python-mcp  # Dockerfile and app live here
+  # Build context: ./python-mcp (path used in build step to avoid Docker context name clash)
 
 jobs:
   build:
@@ -116,13 +116,13 @@ jobs:
           echo "Building and pushing ${FULL_IMAGE} via Buildx"
           echo "Event: ${{ github.event_name }}"
           echo "Branch: ${{ github.ref_name }}"
-          echo "Build context: ${{ env.DOCKER_CONTEXT }}"
+          echo "Build context: ./python-mcp"
           echo "Note: Pull requests will NOT build/push images (skipped by condition)"
           docker buildx build \
             --platform linux/amd64 \
             --tag "${FULL_IMAGE}" \
             --push \
-            ${{ env.DOCKER_CONTEXT }}
+            ./python-mcp
 
       - name: Verify pushed image in Artifact Registry
         if: github.event_name != 'pull_request' && (github.event.inputs.skip_push != true || github.event_name == 'workflow_dispatch')
@@ -256,7 +256,7 @@ jobs:
           echo "- **Full Image**: ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ steps.image_name.outputs.name }}:${{ steps.image_tag.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Project ID**: ${{ env.GCP_PROJECT_ID }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Region**: ${{ env.GCP_REGION }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Build Context**: ${{ env.DOCKER_CONTEXT }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Context**: ./python-mcp" >> $GITHUB_STEP_SUMMARY
           if [ -n "${{ env.SERVICE_NAME }}" ]; then
             echo "- **Cloud Run Service**: ${{ env.SERVICE_NAME }}" >> $GITHUB_STEP_SUMMARY
             echo "- **Environment**: ${{ env.ENV_SUFFIX }}" >> $GITHUB_STEP_SUMMARY
