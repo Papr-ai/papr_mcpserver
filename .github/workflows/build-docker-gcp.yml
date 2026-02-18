@@ -1,0 +1,269 @@
+name: Build Docker Images for Google Cloud
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - development
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - master
+      - development
+    # Note: Pull requests will build images but NOT deploy
+    # Deployment steps are skipped via 'if: github.event_name != pull_request' conditions
+  workflow_dispatch:
+    inputs:
+      image_name:
+        description: 'Image name (defaults to papr-mcp-http)'
+        required: false
+        default: 'papr-mcp-http'
+      image_tag:
+        description: 'Image tag (defaults to branch name)'
+        required: false
+        default: ''
+      skip_push:
+        description: 'Skip pushing to registry'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  # Set GitHub secret GCP_PROJECT_ID to your Google Cloud project ID
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_REGION: us-west1
+  ARTIFACT_REGISTRY_REPO: webapp-images
+  REGISTRY: us-west1-docker.pkg.dev
+  IMAGE_NAME: papr-mcp-http
+  DOCKER_CONTEXT: python-mcp  # Dockerfile and app live here
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # Required for Workload Identity Federation
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Generate image tag
+        id: image_tag
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            if [ -n "${{ github.event.inputs.image_tag }}" ]; then
+              echo "tag=${{ github.event.inputs.image_tag }}" >> $GITHUB_OUTPUT
+            else
+              echo "tag=$(echo ${{ github.ref_name }} | sed 's/[^a-zA-Z0-9]/-/g')" >> $GITHUB_OUTPUT
+            fi
+          elif [ "${{ github.event_name }}" == "push" ] && [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "push" ]; then
+            echo "tag=${GITHUB_REF#refs/heads/}-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=pr-${GITHUB_PR_NUMBER}-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set image name
+        id: image_name
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "${{ github.event.inputs.image_name }}" ]; then
+            echo "name=${{ github.event.inputs.image_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "name=${{ env.IMAGE_NAME }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Require GCP_PROJECT_ID for push/deploy
+        if: github.event_name != 'pull_request' && (github.event.inputs.skip_push != true || github.event_name != 'workflow_dispatch')
+        run: |
+          if [ -z "${{ env.GCP_PROJECT_ID }}" ]; then
+            echo "::error::GCP_PROJECT_ID is not set. Add secret GCP_PROJECT_ID in repo Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+      - name: Authenticate to Google Cloud
+        if: github.event_name != 'pull_request' && (github.event.inputs.skip_push != true || github.event_name != 'workflow_dispatch')
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          # Alternative: Use Workload Identity Federation (more secure)
+          # workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          # service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        if: github.event_name != 'pull_request' && (github.event.inputs.skip_push != true || github.event_name == 'workflow_dispatch')
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        if: github.event_name != 'pull_request' && (github.event.inputs.skip_push != true || github.event_name == 'workflow_dispatch')
+        run: |
+          gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
+
+      - name: Build and push image with Buildx
+        if: github.event_name != 'pull_request' && (github.event.inputs.skip_push != true || github.event_name != 'workflow_dispatch')
+        env:
+          IMAGE_NAME: ${{ steps.image_name.outputs.name }}
+          IMAGE_TAG: ${{ steps.image_tag.outputs.tag }}
+          FULL_IMAGE: ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ steps.image_name.outputs.name }}:${{ steps.image_tag.outputs.tag }}
+        run: |
+          echo "Building and pushing ${FULL_IMAGE} via Buildx"
+          echo "Event: ${{ github.event_name }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Build context: ${{ env.DOCKER_CONTEXT }}"
+          echo "Note: Pull requests will NOT build/push images (skipped by condition)"
+          docker buildx build \
+            --platform linux/amd64 \
+            --tag "${FULL_IMAGE}" \
+            --push \
+            ${{ env.DOCKER_CONTEXT }}
+
+      - name: Verify pushed image in Artifact Registry
+        if: github.event_name != 'pull_request' && (github.event.inputs.skip_push != true || github.event_name == 'workflow_dispatch')
+        env:
+          FULL_IMAGE: ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ steps.image_name.outputs.name }}:${{ steps.image_tag.outputs.tag }}
+        run: |
+          docker buildx imagetools inspect "${FULL_IMAGE}"
+
+      - name: Check GCP Service Account Permissions
+        if: github.event_name != 'pull_request' && (github.event.inputs.skip_push != true || github.event_name == 'workflow_dispatch')
+        run: |
+          echo "=== Checking Service Account Permissions ==="
+          echo ""
+          
+          SA_EMAIL=$(gcloud auth list --filter=status:ACTIVE --format="value(account)" | head -1)
+          
+          if [ -z "${SA_EMAIL}" ]; then
+            echo "⚠️ Could not determine service account email"
+            echo "Make sure GCP_SA_KEY secret contains valid service account credentials"
+            exit 0
+          fi
+          
+          echo "Service Account: ${SA_EMAIL}"
+          echo "Project: ${{ env.GCP_PROJECT_ID }}"
+          echo ""
+          
+          echo "Checking IAM permissions..."
+          gcloud projects get-iam-policy ${{ env.GCP_PROJECT_ID }} \
+            --flatten="bindings[].members" \
+            --filter="bindings.members:${SA_EMAIL}" \
+            --format="table(bindings.role)" || echo "⚠️ Could not check permissions"
+          
+          echo ""
+          echo "=== Required Permissions ==="
+          echo "The service account needs these roles:"
+          echo "1. Artifact Registry Writer (roles/artifactregistry.writer)"
+          echo "   - To push Docker images to Artifact Registry"
+          echo ""
+          echo "2. Service Account User (roles/iam.serviceAccountUser) - Optional"
+          echo "   - If deploying to Cloud Run"
+          echo ""
+          echo "=== How to Grant Permissions ==="
+          echo "1. Go to: https://console.cloud.google.com/iam-admin/iam?project=${{ env.GCP_PROJECT_ID }}"
+          echo "2. Find service account: ${SA_EMAIL}"
+          echo "3. Click 'Edit' and add the required roles"
+          echo ""
+          echo "Or use gcloud CLI:"
+          echo "gcloud projects add-iam-policy-binding ${{ env.GCP_PROJECT_ID }} \\"
+          echo "  --member='serviceAccount:${SA_EMAIL}' \\"
+          echo "  --role='roles/artifactregistry.writer'"
+          echo "==================="
+
+      - name: Select Cloud Run service and traffic
+        if: |
+          github.event_name != 'pull_request' &&
+          (github.ref_name == 'master' || github.ref_name == 'development') &&
+          (github.event.inputs.skip_push != true || github.event_name != 'workflow_dispatch')
+        run: |
+          SERVICE_NAME="mcpserver"
+          if [ "${{ github.ref_name }}" = "development" ]; then
+            ENV_SUFFIX="development"
+            echo "Service: ${SERVICE_NAME} (development) - Traffic: 100%"
+          elif [ "${{ github.ref_name }}" = "master" ]; then
+            ENV_SUFFIX="staging"
+            echo "Service: ${SERVICE_NAME} (staging) - Traffic: 0% until manually routed"
+          else
+            echo "ERROR: Deployment only supported for 'development' and 'master' branches"
+            echo "Current branch: ${{ github.ref_name }}"
+            exit 1
+          fi
+          echo "SERVICE_NAME=${SERVICE_NAME}" >> $GITHUB_ENV
+          echo "ENV_SUFFIX=${ENV_SUFFIX}" >> $GITHUB_ENV
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Service: ${SERVICE_NAME}"
+          echo "Environment: ${ENV_SUFFIX}"
+
+      - name: Deploy to Cloud Run
+        if: |
+          github.event_name != 'pull_request' &&
+          (github.ref_name == 'master' || github.ref_name == 'development') &&
+          (github.event.inputs.skip_push != true || github.event_name != 'workflow_dispatch')
+        env:
+          SERVICE_NAME: ${{ env.SERVICE_NAME }}
+          FULL_IMAGE: ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ steps.image_name.outputs.name }}:${{ steps.image_tag.outputs.tag }}
+        run: |
+          echo "Deploying ${SERVICE_NAME} to Cloud Run..."
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Environment: ${{ env.ENV_SUFFIX }}"
+          echo "Image: ${FULL_IMAGE}"
+          
+          DEPLOY_CMD="gcloud run deploy ${SERVICE_NAME} \
+            --image=${FULL_IMAGE} \
+            --region=${{ env.GCP_REGION }} \
+            --project=${{ env.GCP_PROJECT_ID }} \
+            --port=8000 \
+            --timeout=600 \
+            --memory=2Gi \
+            --cpu=2 \
+            --max-instances=10 \
+            --min-instances=0 \
+            --allow-unauthenticated \
+            --platform=managed \
+            --execution-environment=gen2"
+          
+          if [ "${{ env.ENV_SUFFIX }}" = "staging" ]; then
+            DEPLOY_CMD="${DEPLOY_CMD} --no-traffic"
+            echo "⚠️ Staging deployment: Setting traffic to 0% (no traffic to new revision)"
+          fi
+          
+          DEPLOY_CMD="${DEPLOY_CMD} --quiet"
+          eval ${DEPLOY_CMD}
+          
+          echo ""
+          echo "✅ Deployment complete!"
+          
+          SERVICE_URL=$(gcloud run services describe ${SERVICE_NAME} \
+            --region=${{ env.GCP_REGION }} \
+            --project=${{ env.GCP_PROJECT_ID }} \
+            --format='value(status.url)' 2>/dev/null || echo "N/A")
+          
+          if [ "${SERVICE_URL}" != "N/A" ]; then
+            echo "Service URL: ${SERVICE_URL}"
+          fi
+
+      - name: Output build information
+        run: |
+          echo "### Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image Name**: ${{ steps.image_name.outputs.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image Tag**: ${{ steps.image_tag.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Registry**: ${{ env.REGISTRY }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Full Image**: ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ steps.image_name.outputs.name }}:${{ steps.image_tag.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Project ID**: ${{ env.GCP_PROJECT_ID }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Region**: ${{ env.GCP_REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Context**: ${{ env.DOCKER_CONTEXT }}" >> $GITHUB_STEP_SUMMARY
+          if [ -n "${{ env.SERVICE_NAME }}" ]; then
+            echo "- **Cloud Run Service**: ${{ env.SERVICE_NAME }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Environment**: ${{ env.ENV_SUFFIX }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ github.ref_name }}" != "master" ] && [ "${{ github.ref_name }}" != "development" ]; then
+            echo "- **Note**: Deployment skipped (only 'master' and 'development' branches deploy to Cloud Run)" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "- **Note**: Images were built but not pushed (PR build)" >> $GITHUB_STEP_SUMMARY
+          fi
