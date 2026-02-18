@@ -63,6 +63,10 @@ def setup_logging():
             handlers=handlers
         )
         
+        # Reduce noise from pydocket (fastmcp dependency) background worker in Cloud Run
+        for _name in ("docket", "docket.worker"):
+            logging.getLogger(_name).setLevel(logging.INFO)
+        
         # Log that logging is set up
         logger = logging.getLogger(__name__)
         logger.info("Logging system initialized")
@@ -71,6 +75,8 @@ def setup_logging():
         print(f"Error setting up logging: {e}", file=sys.stderr)
         # Fallback to basic console logging
         logging.basicConfig(level=logging.DEBUG)
+        for _name in ("docket", "docket.worker"):
+            logging.getLogger(_name).setLevel(logging.INFO)
 
 def get_logger(name: str) -> logging.Logger:
     """Get a logger instance with the given name"""

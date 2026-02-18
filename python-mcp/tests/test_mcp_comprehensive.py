@@ -18,6 +18,13 @@ import json
 from pathlib import Path
 from dotenv import load_dotenv
 
+try:
+    import pytest
+    _asyncio_marker = pytest.mark.asyncio
+except ImportError:
+    def _asyncio_marker(f):
+        return f  # no-op when run as script (pytest not installed)
+
 # Fix Windows encoding issues with emojis
 if sys.platform == 'win32':
     import codecs
@@ -30,6 +37,8 @@ load_dotenv()
 # Add current directory to path
 sys.path.insert(0, str(Path(__file__).parent))
 
+
+@_asyncio_marker
 async def test_mcp_comprehensive():
     """Comprehensive MCP testing combining all approaches"""
     print("=== COMPREHENSIVE MCP TEST SUITE ===\n")
