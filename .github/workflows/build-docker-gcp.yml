@@ -4,14 +4,12 @@ on:
   push:
     branches:
       - main
-      - master
       - development
     tags:
       - 'v*'
   pull_request:
     branches:
       - main
-      - master
       - development
     # Note: Pull requests will build images but NOT deploy
     # Deployment steps are skipped via 'if: github.event_name != pull_request' conditions
@@ -156,18 +154,18 @@ jobs:
       - name: Select Cloud Run service and traffic
         if: |
           github.event_name != 'pull_request' &&
-          (github.ref_name == 'master' || github.ref_name == 'development') &&
+          (github.ref_name == 'main' || github.ref_name == 'development') &&
           (github.event.inputs.skip_push != true || github.event_name != 'workflow_dispatch')
         run: |
           SERVICE_NAME="mcpserver"
-          if [ "${{ github.ref_name }}" = "development" ]; then
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            ENV_SUFFIX="staging"
+            echo "Service: ${SERVICE_NAME} (main) - Traffic: 0% until manually routed"
+          elif [ "${{ github.ref_name }}" = "development" ]; then
             ENV_SUFFIX="development"
             echo "Service: ${SERVICE_NAME} (development) - Traffic: 100%"
-          elif [ "${{ github.ref_name }}" = "master" ]; then
-            ENV_SUFFIX="staging"
-            echo "Service: ${SERVICE_NAME} (staging) - Traffic: 0% until manually routed"
           else
-            echo "ERROR: Deployment only supported for 'development' and 'master' branches"
+            echo "ERROR: Deployment only supported for 'main' and 'development' branches"
             echo "Current branch: ${{ github.ref_name }}"
             exit 1
           fi
@@ -180,7 +178,7 @@ jobs:
       - name: Deploy to Cloud Run
         if: |
           github.event_name != 'pull_request' &&
-          (github.ref_name == 'master' || github.ref_name == 'development') &&
+          (github.ref_name == 'main' || github.ref_name == 'development') &&
           (github.event.inputs.skip_push != true || github.event_name != 'workflow_dispatch')
         env:
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
@@ -239,8 +237,8 @@ jobs:
             echo "- **Cloud Run Service**: ${{ env.SERVICE_NAME }}" >> $GITHUB_STEP_SUMMARY
             echo "- **Environment**: ${{ env.ENV_SUFFIX }}" >> $GITHUB_STEP_SUMMARY
             echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          elif [ "${{ github.ref_name }}" != "master" ] && [ "${{ github.ref_name }}" != "development" ]; then
-            echo "- **Note**: Deployment skipped (only 'master' and 'development' branches deploy to Cloud Run)" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ github.ref_name }}" != "main" ] && [ "${{ github.ref_name }}" != "development" ]; then
+            echo "- **Note**: Deployment skipped (only 'main' and 'development' branches deploy to Cloud Run)" >> $GITHUB_STEP_SUMMARY
           fi
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             echo "- **Note**: Images were built but not pushed (PR build)" >> $GITHUB_STEP_SUMMARY
