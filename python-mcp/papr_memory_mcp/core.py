@@ -125,12 +125,12 @@ def _ensure_mw(app):
 
 class CustomFastMCP(FastMCP):
     def __init__(self, **settings):
-        """Initialize CustomFastMCP with Bearer token middleware support"""
-        # Enable stateful HTTP for better session persistence and reconnection resilience
-        settings.setdefault("stateless_http", False)
-        # Do NOT set json_response - let FastMCP support both JSON-RPC and SSE transports
-        # based on the Accept header from the client
-        
+        """Initialize CustomFastMCP with Bearer token middleware support.
+
+        Note: Newer FastMCP versions no longer accept the `stateless_http`
+        flag in the constructor, so we rely on the library defaults and
+        configure HTTP/stdio behavior only when calling `run()`.
+        """
         print("Initializing CustomFastMCP with explicit tools...", file=sys.stderr)
         super().__init__(name="Papr Memory MCP", **settings)
         
