@@ -139,8 +139,18 @@ class CustomFastMCP(FastMCP):
         
         logger.info("CustomFastMCP initialized with explicit memory tools")
         print("CustomFastMCP initialized with explicit memory tools", file=sys.stderr)
-        logger.info(f"Registered tools: {list(self._tool_manager._tools.keys())}")
-        print(f"Registered tools: {list(self._tool_manager._tools.keys())}", file=sys.stderr)
+
+        # Try to log registered tools without depending on private FastMCP internals
+        tools_list: list[str] = []
+        try:
+            tm = getattr(self, "_tool_manager", None)
+            if tm is not None and hasattr(tm, "_tools"):
+                tools_list = list(tm._tools.keys())
+        except Exception:
+            # If FastMCP internals change, skip detailed tool logging
+            tools_list = []
+        logger.info(f"Registered tools: {tools_list}")
+        print(f"Registered tools: {tools_list}", file=sys.stderr)
         
         # Register health endpoint after initialization
         self._register_health_endpoint()
@@ -273,7 +283,7 @@ class CustomFastMCP(FastMCP):
                         return JSONResponse({
                             "status": "healthy",
                             "server": "Papr Memory MCP",
-                            "tools": list(self._tool_manager._tools.keys()),
+                            "tools": list(getattr(getattr(self, "_tool_manager", None), "_tools", {}).keys()),
                             "version": "1.0.0",
                             "session_mode": "stateful",
                             "robustness": {
@@ -310,7 +320,7 @@ class CustomFastMCP(FastMCP):
                         return JSONResponse({
                             "status": "healthy",
                             "server": "Papr Memory MCP",
-                            "tools": list(self._tool_manager._tools.keys()),
+                            "tools": list(getattr(getattr(self, "_tool_manager", None), "_tools", {}).keys()),
                             "version": "1.0.0",
                             "session_mode": "stateful",
                             "robustness": {
@@ -764,13 +774,19 @@ def init_mcp():
     try:
         print("Initializing MCP server with explicit tools...", file=sys.stderr)
         
-        # Create MCP instance with explicit tools and stateless configuration
-        # Middleware is installed automatically via app factory overrides
+        # Create MCP instance with explicit tools and middleware
         mcp = CustomFastMCP()
         
-        # Log the tools that were registered
-        logger.info(f"Initialized MCP with tools: {list(mcp._tool_manager._tools.keys())}")
-        print(f"Initialized MCP with tools: {list(mcp._tool_manager._tools.keys())}", file=sys.stderr)
+        # Log the tools that were registered (without assuming private attributes exist)
+        tools_list: list[str] = []
+        try:
+            tm = getattr(mcp, "_tool_manager", None)
+            if tm is not None and hasattr(tm, "_tools"):
+                tools_list = list(tm._tools.keys())
+        except Exception:
+            tools_list = []
+        logger.info(f"Initialized MCP with tools: {tools_list}")
+        print(f"Initialized MCP with tools: {tools_list}", file=sys.stderr)
         return mcp
     except Exception as e:
         logger.error(f"Error initializing MCP: {str(e)}")
@@ -782,7 +798,12 @@ print("Attempting to initialize MCP with explicit tools...", file=sys.stderr)
 try:
     mcp = init_mcp()
     print("Successfully initialized MCP with explicit tools", file=sys.stderr)
-    print(f"Available tools: {list(mcp._tool_manager._tools.keys())}", file=sys.stderr)
+    try:
+        tm = getattr(mcp, "_tool_manager", None)
+        tools_list = list(tm._tools.keys()) if tm is not None and hasattr(tm, "_tools") else []
+    except Exception:
+        tools_list = []
+    print(f"Available tools: {tools_list}", file=sys.stderr)
 except Exception as e:
     print(f"Failed to initialize MCP with explicit tools: {e}", file=sys.stderr)
     print("Falling back to basic MCP...", file=sys.stderr)
