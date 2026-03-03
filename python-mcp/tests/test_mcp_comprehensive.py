@@ -11,6 +11,7 @@ Known Issues (handled gracefully):
 """
 
 import asyncio
+import logging
 import sys
 import os
 import subprocess
@@ -36,6 +37,10 @@ load_dotenv()
 
 # Add current directory to path
 sys.path.insert(0, str(Path(__file__).parent))
+
+# Reduce log noise during test run (expected 404s, API calls, connection close, and tool errors)
+for _name in ("papr_memory", "papr_memory._base_client", "httpcore", "httpcore.connection", "papr_memory_mcp.core"):
+    logging.getLogger(_name).setLevel(logging.WARNING)
 
 
 @_asyncio_marker
