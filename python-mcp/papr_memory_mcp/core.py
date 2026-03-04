@@ -566,11 +566,15 @@ class CustomFastMCP(FastMCP):
                 logger.info(f"Searching memories: {query[:100]}...")
                 print(f"Searching memories: {query[:100]}...", file=sys.stderr)
                 
+                # Papr API returns 422 for max_nodes=0 or max_memories=0; enforce minimum 1
+                safe_max_memories = max(1, max_memories)
+                safe_max_nodes = max(1, max_nodes)
+                
                 # Prepare search parameters
                 search_params = {
                     "query": query,
-                    "max_memories": max_memories,
-                    "max_nodes": max_nodes,
+                    "max_memories": safe_max_memories,
+                    "max_nodes": safe_max_nodes,
                     "rank_results": rank_results,
                     "enable_agentic_graph": enable_agentic_graph
                 }
