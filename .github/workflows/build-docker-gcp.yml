@@ -162,7 +162,7 @@ jobs:
             ENV_SUFFIX="staging"
             echo "Service: ${SERVICE_NAME} (main) - Traffic: 0% until manually routed"
           elif [ "${{ github.ref_name }}" = "development" ]; then
-            SERVICE_NAME="mcpserver-dev"
+            SERVICE_NAME="mcpserver-development"
             ENV_SUFFIX="development"
             echo "Service: ${SERVICE_NAME} (development) - Traffic: 100%"
           else
