@@ -100,6 +100,28 @@ def _get_effective_api_key(passed_api_key: Optional[str]) -> str:
     
     raise ValueError("API key is required. Pass 'api_key' or set PAPR_API_KEY in environment.")
 
+
+# Papr surface attribution.
+#
+# The MCP server is bring-your-own-key: it never mints an API key, it consumes
+# one supplied by the caller (see _get_effective_api_key above). That means
+# APIKey.created_by_client attributes the product that *provisioned* the key
+# (paprwork or dev_platform), not the client that performed the write.
+#
+# The only way the memory server can attribute an MCP write is a request-time
+# header. Without this stamp, MCP traffic would be misattributed to `py_sdk`,
+# because the generated Python SDK already sends X-Stainless-Lang: python.
+#
+# No SDK release is required — default_headers is already supported by papr_memory.
+PAPR_CLIENT_HEADER = "X-Papr-Client"
+PAPR_SURFACE = "mcp"
+PAPR_DEFAULT_HEADERS = {PAPR_CLIENT_HEADER: PAPR_SURFACE}
+
+
+def _make_papr_client(api_key: str) -> Papr:
+    """Build a Papr client stamped with the MCP surface for attribution."""
+    return Papr(x_api_key=api_key, default_headers=PAPR_DEFAULT_HEADERS)
+
 def install_bearer_middleware(app):
     """Install Bearer token middleware using FastAPI's decorator approach"""
     from fastapi import Request
@@ -406,7 +428,7 @@ class CustomFastMCP(FastMCP):
                 
                 # Use per-call Papr client with provided or env API key
                 effective_key = _get_effective_api_key(api_key)
-                papr_client = Papr(x_api_key=effective_key)
+                papr_client = _make_papr_client(effective_key)
                 result = papr_client.memory.add(**memory_data)
                 
                 logger.info(f"Memory added successfully: {result}")
@@ -439,7 +461,7 @@ class CustomFastMCP(FastMCP):
                 print(f"Getting memory: {memory_id}", file=sys.stderr)
                 
                 effective_key = _get_effective_api_key(api_key)
-                papr_client = Papr(x_api_key=effective_key)
+                papr_client = _make_papr_client(effective_key)
                 result = papr_client.memory.get(memory_id)
                 
                 logger.info(f"Memory retrieved successfully: {result}")
@@ -493,7 +515,7 @@ class CustomFastMCP(FastMCP):
                     update_data["relationships_json"] = relationships_json
                 
                 effective_key = _get_effective_api_key(api_key)
-                papr_client = Papr(x_api_key=effective_key)
+                papr_client = _make_papr_client(effective_key)
                 result = papr_client.memory.update(memory_id, **update_data)
                 
                 logger.info(f"Memory updated successfully: {result}")
@@ -522,7 +544,7 @@ class CustomFastMCP(FastMCP):
                 print(f"Deleting memory: {memory_id}", file=sys.stderr)
                 
                 effective_key = _get_effective_api_key(api_key)
-                papr_client = Papr(x_api_key=effective_key)
+                papr_client = _make_papr_client(effective_key)
                 result = papr_client.memory.delete(memory_id, skip_parse=skip_parse)
                 
                 logger.info(f"Memory deleted successfully: {result}")
@@ -583,7 +605,7 @@ class CustomFastMCP(FastMCP):
                     search_params["metadata"] = metadata
                 
                 effective_key = _get_effective_api_key(api_key)
-                papr_client = Papr(x_api_key=effective_key)
+                papr_client = _make_papr_client(effective_key)
                 result = papr_client.memory.search(**search_params)
                 
                 logger.info(f"Memory search completed successfully")
@@ -657,7 +679,7 @@ class CustomFastMCP(FastMCP):
                     feedback_data["feedbackImpact"] = feedback_impact
                 
                 effective_key = _get_effective_api_key(api_key)
-                papr_client = Papr(x_api_key=effective_key)
+                papr_client = _make_papr_client(effective_key)
                 result = papr_client.feedback.submit(
                     search_id=search_id,
                     feedback_data=feedback_data,
@@ -695,7 +717,7 @@ class CustomFastMCP(FastMCP):
                 print(f"Submitting batch feedback: {len(feedback_items)} items", file=sys.stderr)
                 
                 effective_key = _get_effective_api_key(api_key)
-                papr_client = Papr(x_api_key=effective_key)
+                papr_client = _make_papr_client(effective_key)
                 result = papr_client.feedback.submit_batch(
                     feedback_items=feedback_items,
                     session_context=session_context
@@ -757,7 +779,7 @@ class CustomFastMCP(FastMCP):
                     batch_params["webhook_secret"] = webhook_secret
                 
                 effective_key = _get_effective_api_key(api_key)
-                papr_client = Papr(x_api_key=effective_key)
+                papr_client = _make_papr_client(effective_key)
                 result = papr_client.memory.add_batch(**batch_params)
                 
                 logger.info(f"Memory batch added successfully: {result}")
